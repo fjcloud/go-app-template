@@ -34,7 +34,7 @@ commands:
         curl -fsSL "${GIT_SERVER}/dl/gitpop?os=linux&arch=amd64" \
           -o ${HOME}/.local/bin/gitpop
         chmod +x ${HOME}/.local/bin/gitpop
-        pip install --quiet ansible kubernetes
+        python3 -m pip install --user --quiet ansible kubernetes
         echo "Bootstrap complete."
       workingDir: ${PROJECT_SOURCE}
   - id: git-push
