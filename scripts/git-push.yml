@@ -29,10 +29,15 @@
       args:
         chdir: "{{ project_root }}"
 
-    - name: Stage and commit all files
+    - name: Stage all files
+      ansible.builtin.command: git add -A
+      args:
+        chdir: "{{ project_root }}"
+
+    - name: Commit if there are staged changes
       ansible.builtin.shell: |
-        git add -A
-        git commit -m "feat: {{ app_name }} initial implementation" || true
+        git diff --staged --quiet || \
+          git commit -m "feat: {{ app_name }} initial implementation"
       args:
         chdir: "{{ project_root }}"
 
