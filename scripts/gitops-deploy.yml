@@ -17,12 +17,12 @@
         chdir: "{{ project_root }}"
       register: repo_url
 
-    - name: Create dev namespace
+    - name: Create dev namespace (via OpenShift ProjectRequest)
       kubernetes.core.k8s:
         state: present
         definition:
-          apiVersion: v1
-          kind: Namespace
+          apiVersion: project.openshift.io/v1
+          kind: ProjectRequest
           metadata:
             name: "{{ dev_ns }}"
       ignore_errors: true
@@ -44,6 +44,7 @@
             kind: ClusterRole
             name: system:image-puller
             apiGroup: rbac.authorization.k8s.io
+      ignore_errors: true
 
     - name: Update image reference in deployment manifest
       ansible.builtin.replace:
