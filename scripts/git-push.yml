@@ -4,6 +4,7 @@
   connection: local
   gather_facts: false
   vars:
+    project_root: "{{ playbook_dir }}/.."
     app_name: "{{ lookup('env', 'APP_NAME') | default('fortune-cookie') }}"
     git_server: "{{ lookup('env', 'GIT_SERVER') }}"
     git_email: "{{ lookup('env', 'GIT_EMAIL') | default('dev@workshop.local') }}"
@@ -11,29 +12,41 @@
 
   tasks:
     - name: Remove existing origin remote
-      command: git remote remove origin
+      ansible.builtin.command: git remote remove origin
+      args:
+        chdir: "{{ project_root }}"
       ignore_errors: true
 
     - name: Create repository on Git server
-      command: gitpop init --host {{ git_server }} --name {{ app_name }}
+      ansible.builtin.command: gitpop init --host {{ git_server }} --name {{ app_name }}
+      args:
+        chdir: "{{ project_root }}"
 
     - name: Configure git identity
-      shell: |
+      ansible.builtin.shell: |
         git config user.email "{{ git_email }}"
         git config user.name  "{{ git_name }}"
+      args:
+        chdir: "{{ project_root }}"
 
     - name: Stage and commit all files
-      shell: |
+      ansible.builtin.shell: |
         git add -A
         git commit -m "feat: {{ app_name }} initial implementation" || true
+      args:
+        chdir: "{{ project_root }}"
 
     - name: Push to Git server
-      command: git push -u origin main
+      ansible.builtin.command: git push -u origin main
+      args:
+        chdir: "{{ project_root }}"
 
-    - name: Show repository URL
-      command: git remote get-url origin
+    - name: Get repository URL
+      ansible.builtin.command: git remote get-url origin
+      args:
+        chdir: "{{ project_root }}"
       register: repo_url
 
     - name: Print result
-      debug:
+      ansible.builtin.debug:
         msg: "Repo: {{ repo_url.stdout }}"

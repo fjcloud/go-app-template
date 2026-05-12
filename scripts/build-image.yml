@@ -4,60 +4,100 @@
   connection: local
   gather_facts: false
   vars:
+    project_root: "{{ playbook_dir }}/.."
     app_name: "{{ lookup('env', 'APP_NAME') | default('fortune-cookie') }}"
     build_ns: "{{ app_name }}-build"
     image: "image-registry.openshift-image-registry.svc:5000/{{ app_name }}-build/{{ app_name }}:latest"
 
   tasks:
     - name: Get repository URL
-      command: git remote get-url origin
+      ansible.builtin.command: git remote get-url origin
+      args:
+        chdir: "{{ project_root }}"
       register: repo_url
 
     - name: Create build namespace
-      command: oc new-project {{ build_ns }}
-      ignore_errors: true
+      kubernetes.core.k8s:
+        state: present
+        definition:
+          apiVersion: v1
+          kind: Namespace
+          metadata:
+            name: "{{ build_ns }}"
 
     - name: Grant pipeline service account registry-editor role
-      command: >
-        oc policy add-role-to-user registry-editor
-        system:serviceaccount:{{ build_ns }}:pipeline
-        -n {{ build_ns }}
-      ignore_errors: true
+      kubernetes.core.k8s:
+        state: present
+        definition:
+          apiVersion: rbac.authorization.k8s.io/v1
+          kind: RoleBinding
+          metadata:
+            name: pipeline-registry-editor
+            namespace: "{{ build_ns }}"
+          subjects:
+            - kind: ServiceAccount
+              name: pipeline
+              namespace: "{{ build_ns }}"
+          roleRef:
+            kind: ClusterRole
+            name: registry-editor
+            apiGroup: rbac.authorization.k8s.io
 
-    - name: Apply Tekton Pipeline and workspace PVC (Kustomize)
-      command: oc apply -k pipeline/base -n {{ build_ns }}
+    - name: Apply Tekton Pipeline and workspace PVC
+      kubernetes.core.k8s:
+        state: present
+        namespace: "{{ build_ns }}"
+        definition: "{{ lookup('kubernetes.core.kustomize', dir=project_root + '/pipeline/base') }}"
 
     - name: Trigger PipelineRun
-      shell: |
-        oc create -n {{ build_ns }} -o jsonpath='{.metadata.name}' -f - <<YAML
-        apiVersion: tekton.dev/v1
-        kind: PipelineRun
-        metadata:
-          generateName: build-app-
-        spec:
-          serviceAccountName: pipeline
-          pipelineRef:
-            name: build-app
-          params:
-            - name: git-url
-              value: {{ repo_url.stdout }}
-            - name: image
-              value: {{ image }}
-          workspaces:
-            - name: source
-              persistentVolumeClaim:
-                claimName: build-ws
-        YAML
+      kubernetes.core.k8s:
+        state: present
+        definition:
+          apiVersion: tekton.dev/v1
+          kind: PipelineRun
+          metadata:
+            generateName: build-app-
+            namespace: "{{ build_ns }}"
+          spec:
+            serviceAccountName: pipeline
+            pipelineRef:
+              name: build-app
+            params:
+              - name: git-url
+                value: "{{ repo_url.stdout | trim }}"
+              - name: image
+                value: "{{ image }}"
+            workspaces:
+              - name: source
+                persistentVolumeClaim:
+                  claimName: build-ws
       register: pipeline_run
 
-    - name: Wait for PipelineRun to succeed
-      # 900s — cluster task resolver may fetch on first run
-      command: >
-        oc wait pipelinerun {{ pipeline_run.stdout }}
-        -n {{ build_ns }}
-        --for=condition=Succeeded
-        --timeout=900s
+    - name: Wait for PipelineRun to succeed (up to 15 min)
+      kubernetes.core.k8s_info:
+        api_version: tekton.dev/v1
+        kind: PipelineRun
+        name: "{{ pipeline_run.result.metadata.name }}"
+        namespace: "{{ build_ns }}"
+      register: pr_status
+      until: >
+        pr_status.resources | length > 0 and
+        (pr_status.resources[0].status.conditions |
+          selectattr('type', 'equalto', 'Succeeded') | list | length > 0) and
+        (pr_status.resources[0].status.conditions |
+          selectattr('type', 'equalto', 'Succeeded') |
+          map(attribute='status') | list | first in ['True', 'False'])
+      retries: 90
+      delay: 10
+
+    - name: Assert PipelineRun succeeded
+      ansible.builtin.assert:
+        that:
+          - pr_status.resources[0].status.conditions |
+            selectattr('type', 'equalto', 'Succeeded') |
+            map(attribute='status') | list | first == 'True'
+        fail_msg: "PipelineRun {{ pipeline_run.result.metadata.name }} failed"
 
     - name: Print built image reference
-      debug:
+      ansible.builtin.debug:
         msg: "Image: {{ image }}"

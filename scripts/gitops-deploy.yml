@@ -4,6 +4,7 @@
   connection: local
   gather_facts: false
   vars:
+    project_root: "{{ playbook_dir }}/.."
     app_name: "{{ lookup('env', 'APP_NAME') | default('fortune-cookie') }}"
     dev_ns: "{{ app_name }}-dev"
     build_ns: "{{ app_name }}-build"
@@ -11,93 +12,110 @@
 
   tasks:
     - name: Get repository URL
-      command: git remote get-url origin
+      ansible.builtin.command: git remote get-url origin
+      args:
+        chdir: "{{ project_root }}"
       register: repo_url
 
     - name: Create dev namespace
-      command: oc new-project {{ dev_ns }}
-      ignore_errors: true
+      kubernetes.core.k8s:
+        state: present
+        definition:
+          apiVersion: v1
+          kind: Namespace
+          metadata:
+            name: "{{ dev_ns }}"
 
-    - name: Allow dev namespace to pull from build namespace
-      command: >
-        oc policy add-role-to-user system:image-puller
-        system:serviceaccount:{{ dev_ns }}:default
-        -n {{ build_ns }}
-      ignore_errors: true
+    - name: Allow dev namespace to pull images from build namespace
+      kubernetes.core.k8s:
+        state: present
+        definition:
+          apiVersion: rbac.authorization.k8s.io/v1
+          kind: RoleBinding
+          metadata:
+            name: image-puller
+            namespace: "{{ build_ns }}"
+          subjects:
+            - kind: ServiceAccount
+              name: default
+              namespace: "{{ dev_ns }}"
+          roleRef:
+            kind: ClusterRole
+            name: system:image-puller
+            apiGroup: rbac.authorization.k8s.io
 
     - name: Update image reference in deployment manifest
-      replace:
-        path: deploy/base/deployment.yaml
+      ansible.builtin.replace:
+        path: "{{ project_root }}/deploy/base/deployment.yaml"
         regexp: 'image: .*'
         replace: "image: {{ image }}"
 
     - name: Commit and push updated manifest
-      shell: |
+      ansible.builtin.shell: |
         git add deploy/base/deployment.yaml
         git commit -m "ci: update image to {{ app_name }}:latest" || true
         git push
+      args:
+        chdir: "{{ project_root }}"
 
-    - name: Deploy developer-owned Argo CD instance (Kustomize)
-      command: oc apply -k gitops/base -n {{ dev_ns }}
+    - name: Deploy developer-owned Argo CD instance
+      kubernetes.core.k8s:
+        state: present
+        namespace: "{{ dev_ns }}"
+        definition: "{{ lookup('kubernetes.core.kustomize', dir=project_root + '/gitops/base') }}"
 
-    - name: Wait for ArgoCD CR to become Available
-      shell: |
-        for i in $(seq 1 30); do
-          PHASE=$(oc get argocd argocd -n {{ dev_ns }} \
-            -o jsonpath='{.status.phase}' 2>/dev/null || echo "")
-          echo "  phase=${PHASE} (${i}/30)"
-          [ "${PHASE}" = "Available" ] && exit 0
-          sleep 10
-        done
-        exit 1
-
-    - name: Wait for argocd-server deployment
-      command: >
-        oc wait deployment/argocd-server
-        -n {{ dev_ns }}
-        --for=condition=Available
-        --timeout=120s
+    - name: Wait for Argo CD instance to become Available
+      kubernetes.core.k8s_info:
+        api_version: argoproj.io/v1beta1
+        kind: ArgoCD
+        name: argocd
+        namespace: "{{ dev_ns }}"
+      register: argocd_status
+      until: >
+        argocd_status.resources | length > 0 and
+        argocd_status.resources[0].status.phase | default('') == 'Available'
+      retries: 30
+      delay: 10
 
     - name: Create Argo CD Application
-      shell: |
-        oc apply -n {{ dev_ns }} -f - <<YAML
-        apiVersion: argoproj.io/v1alpha1
+      kubernetes.core.k8s:
+        state: present
+        definition:
+          apiVersion: argoproj.io/v1alpha1
+          kind: Application
+          metadata:
+            name: "{{ app_name }}"
+            namespace: "{{ dev_ns }}"
+          spec:
+            project: default
+            source:
+              repoURL: "{{ repo_url.stdout | trim }}"
+              targetRevision: main
+              path: deploy/base
+            destination:
+              server: https://kubernetes.default.svc
+              namespace: "{{ dev_ns }}"
+            syncPolicy:
+              automated:
+                prune: true
+                selfHeal: true
+
+    - name: Wait for application to sync and become Healthy
+      kubernetes.core.k8s_info:
+        api_version: argoproj.io/v1alpha1
         kind: Application
-        metadata:
-          name: {{ app_name }}
-        spec:
-          project: default
-          source:
-            repoURL: {{ repo_url.stdout }}
-            targetRevision: main
-            path: deploy/base
-          destination:
-            server: https://kubernetes.default.svc
-            namespace: {{ dev_ns }}
-          syncPolicy:
-            automated:
-              prune: true
-              selfHeal: true
-        YAML
+        name: "{{ app_name }}"
+        namespace: "{{ dev_ns }}"
+      register: app_status
+      until: >
+        app_status.resources | length > 0 and
+        app_status.resources[0].status.sync.status | default('') == 'Synced' and
+        app_status.resources[0].status.health.status | default('') == 'Healthy'
+      retries: 30
+      delay: 10
 
-    - name: Wait for application to sync and become healthy
-      shell: |
-        for i in $(seq 1 30); do
-          SYNC=$(oc get application {{ app_name }} -n {{ dev_ns }} \
-            -o jsonpath='{.status.sync.status}' 2>/dev/null || echo "")
-          HEALTH=$(oc get application {{ app_name }} -n {{ dev_ns }} \
-            -o jsonpath='{.status.health.status}' 2>/dev/null || echo "")
-          echo "  sync=${SYNC} health=${HEALTH} (${i}/30)"
-          [ "${SYNC}" = "Synced" ] && [ "${HEALTH}" = "Healthy" ] && exit 0
-          sleep 10
-        done
-
-    - name: Show application and Argo CD URLs
-      shell: |
-        echo "App:    https://$(oc get route {{ app_name }} -n {{ dev_ns }} -o jsonpath='{.spec.host}')"
-        echo "ArgoCD: https://$(oc get route argocd-server -n {{ dev_ns }} -o jsonpath='{.spec.host}')"
-      register: urls
-
-    - name: Print URLs
-      debug:
-        msg: "{{ urls.stdout_lines }}"
+    - name: Show application URLs
+      ansible.builtin.debug:
+        msg:
+          - "App:    https://{{ lookup('kubernetes.core.k8s', api_version='route.openshift.io/v1', kind='Route', namespace=dev_ns, resource_name=app_name).spec.host }}"
+          - "ArgoCD: https://{{ lookup('kubernetes.core.k8s', api_version='route.openshift.io/v1', kind='Route', namespace=dev_ns, resource_name='argocd-server').spec.host }}"

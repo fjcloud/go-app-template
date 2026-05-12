@@ -10,14 +10,13 @@
         "chunkTimeout": 120000,
         "timeout": 600000
       },
-      "models": [
-        {
-          "id": "qwen36",
+      "models": {
+        "qwen36": {
           "name": "Qwen3.6-35B",
           "attachment": false,
           "temperature": 0.7
         }
-      ]
+      }
     }
   },
   "model": "qwen36/qwen36",
