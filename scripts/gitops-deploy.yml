@@ -18,17 +18,11 @@
       register: repo_url
 
     - name: Create dev project
-      community.okd.openshift:
-        state: present
-        definition:
-          apiVersion: project.openshift.io/v1
-          kind: ProjectRequest
-          metadata:
-            name: "{{ dev_ns }}"
+      ansible.builtin.command: oc new-project {{ dev_ns }}
       ignore_errors: true
 
     - name: Allow dev namespace to pull images from build namespace
-      community.okd.openshift:
+      kubernetes.core.k8s:
         state: present
         definition:
           apiVersion: rbac.authorization.k8s.io/v1
@@ -60,7 +54,7 @@
         chdir: "{{ project_root }}"
 
     - name: Deploy developer-owned Argo CD instance
-      community.okd.openshift:
+      kubernetes.core.k8s:
         state: present
         namespace: "{{ dev_ns }}"
         definition: "{{ lookup('kubernetes.core.kustomize', dir=project_root + '/gitops/base') }}"
@@ -79,7 +73,7 @@
       delay: 10
 
     - name: Create Argo CD Application
-      community.okd.openshift:
+      kubernetes.core.k8s:
         state: present
         definition:
           apiVersion: argoproj.io/v1alpha1
