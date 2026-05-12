@@ -1,0 +1,15 @@
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: fortune-cookie
+  labels:
+    app.kubernetes.io/name: fortune-cookie
+spec:
+  to:
+    kind: Service
+    name: fortune-cookie
+  port:
+    targetPort: http
+  tls:
+    termination: edge
+    insecureEdgeTerminationPolicy: Redirect

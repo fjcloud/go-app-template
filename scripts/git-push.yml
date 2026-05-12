@@ -1,0 +1,39 @@
+---
+- name: Push code to personal Git server repository
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  vars:
+    app_name: "{{ lookup('env', 'APP_NAME') | default('fortune-cookie') }}"
+    git_server: "{{ lookup('env', 'GIT_SERVER') }}"
+    git_email: "{{ lookup('env', 'GIT_EMAIL') | default('dev@workshop.local') }}"
+    git_name: "{{ lookup('env', 'GIT_NAME') | default('Developer') }}"
+
+  tasks:
+    - name: Remove existing origin remote
+      command: git remote remove origin
+      ignore_errors: true
+
+    - name: Create repository on Git server
+      command: gitpop init --host {{ git_server }} --name {{ app_name }}
+
+    - name: Configure git identity
+      shell: |
+        git config user.email "{{ git_email }}"
+        git config user.name  "{{ git_name }}"
+
+    - name: Stage and commit all files
+      shell: |
+        git add -A
+        git commit -m "feat: {{ app_name }} initial implementation" || true
+
+    - name: Push to Git server
+      command: git push -u origin main
+
+    - name: Show repository URL
+      command: git remote get-url origin
+      register: repo_url
+
+    - name: Print result
+      debug:
+        msg: "Repo: {{ repo_url.stdout }}"

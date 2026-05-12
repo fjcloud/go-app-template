@@ -1,0 +1,63 @@
+---
+- name: Build container image with OpenShift Pipelines
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  vars:
+    app_name: "{{ lookup('env', 'APP_NAME') | default('fortune-cookie') }}"
+    build_ns: "{{ app_name }}-build"
+    image: "image-registry.openshift-image-registry.svc:5000/{{ app_name }}-build/{{ app_name }}:latest"
+
+  tasks:
+    - name: Get repository URL
+      command: git remote get-url origin
+      register: repo_url
+
+    - name: Create build namespace
+      command: oc new-project {{ build_ns }}
+      ignore_errors: true
+
+    - name: Grant pipeline service account registry-editor role
+      command: >
+        oc policy add-role-to-user registry-editor
+        system:serviceaccount:{{ build_ns }}:pipeline
+        -n {{ build_ns }}
+      ignore_errors: true
+
+    - name: Apply Tekton Pipeline and workspace PVC (Kustomize)
+      command: oc apply -k pipeline/base -n {{ build_ns }}
+
+    - name: Trigger PipelineRun
+      shell: |
+        oc create -n {{ build_ns }} -o jsonpath='{.metadata.name}' -f - <<YAML
+        apiVersion: tekton.dev/v1
+        kind: PipelineRun
+        metadata:
+          generateName: build-app-
+        spec:
+          serviceAccountName: pipeline
+          pipelineRef:
+            name: build-app
+          params:
+            - name: git-url
+              value: {{ repo_url.stdout }}
+            - name: image
+              value: {{ image }}
+          workspaces:
+            - name: source
+              persistentVolumeClaim:
+                claimName: build-ws
+        YAML
+      register: pipeline_run
+
+    - name: Wait for PipelineRun to succeed
+      # 900s — cluster task resolver may fetch on first run
+      command: >
+        oc wait pipelinerun {{ pipeline_run.stdout }}
+        -n {{ build_ns }}
+        --for=condition=Succeeded
+        --timeout=900s
+
+    - name: Print built image reference
+      debug:
+        msg: "Image: {{ image }}"

@@ -1,0 +1,58 @@
+schemaVersion: 2.2.2
+metadata:
+  name: go-app-workspace
+  description: Go development environment with OpenCode AI assistant
+attributes:
+  controller.devfile.io/storage-type: per-user
+components:
+  - name: dev
+    container:
+      image: quay.io/devfile/universal-developer-image:latest
+      memoryRequest: 2Gi
+      memoryLimit: 6Gi
+      cpuRequest: 500m
+      cpuLimit: 2000m
+      mountSources: true
+      env:
+        - name: SHELL
+          value: /bin/bash
+        - name: GIT_SERVER
+          value: https://gitpop.apps.sno.msl.cloud
+        - name: PATH
+          value: /home/user/.opencode/bin:/home/user/.local/bin:/usr/local/go/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+commands:
+  - id: bootstrap
+    exec:
+      component: dev
+      label: "Install tools (OpenCode + gitpop + Ansible)"
+      commandLine: |
+        set -e
+        curl -fsSL https://opencode.ai/install | bash
+        mkdir -p ${HOME}/.local/bin
+        curl -fsSL "${GIT_SERVER}/dl/gitpop?os=linux&arch=amd64" \
+          -o ${HOME}/.local/bin/gitpop
+        chmod +x ${HOME}/.local/bin/gitpop
+        pip install --quiet ansible
+        echo "Bootstrap complete."
+      workingDir: ${PROJECT_SOURCE}
+  - id: git-push
+    exec:
+      component: dev
+      label: "1. Push code to Git server"
+      commandLine: ansible-playbook scripts/git-push.yml
+      workingDir: ${PROJECT_SOURCE}
+  - id: build-image
+    exec:
+      component: dev
+      label: "2. Build container image"
+      commandLine: ansible-playbook scripts/build-image.yml
+      workingDir: ${PROJECT_SOURCE}
+  - id: gitops-deploy
+    exec:
+      component: dev
+      label: "3. Deploy with Argo CD"
+      commandLine: ansible-playbook scripts/gitops-deploy.yml
+      workingDir: ${PROJECT_SOURCE}
+events:
+  postStart:
+    - bootstrap
