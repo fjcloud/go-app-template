@@ -28,14 +28,17 @@ commands:
       component: dev
       label: "Install tools (OpenCode + gitpop + Ansible)"
       commandLine: |
-        set -e
-        curl -fsSL https://opencode.ai/install | bash
+        echo "=== Bootstrap starting ==="
+        curl -fsSL https://opencode.ai/install | bash \
+          && echo "✓ opencode installed" || echo "✗ opencode install failed"
         mkdir -p ${HOME}/.local/bin
         curl -fsSL "${GIT_SERVER}/dl/gitpop?os=linux&arch=amd64" \
-          -o ${HOME}/.local/bin/gitpop
-        chmod +x ${HOME}/.local/bin/gitpop
-        python3 -m pip install --user --quiet ansible kubernetes
-        echo "Bootstrap complete."
+          -o ${HOME}/.local/bin/gitpop \
+          && chmod +x ${HOME}/.local/bin/gitpop \
+          && echo "✓ gitpop installed" || echo "✗ gitpop install failed"
+        python3 -m pip install --user --quiet ansible kubernetes \
+          && echo "✓ ansible + kubernetes installed" || echo "✗ pip install failed"
+        echo "=== Bootstrap complete ==="
       workingDir: ${PROJECT_SOURCE}
   - id: git-push
     exec:
