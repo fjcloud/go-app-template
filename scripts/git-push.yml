@@ -7,8 +7,8 @@
     project_root: "{{ playbook_dir }}/.."
     app_name: "{{ lookup('env', 'APP_NAME') | default('fortune-cookie') }}"
     git_server: "{{ lookup('env', 'GIT_SERVER') }}"
-    git_email: "{{ lookup('env', 'GIT_EMAIL') | default('dev@workshop.local') }}"
-    git_name: "{{ lookup('env', 'GIT_NAME') | default('Developer') }}"
+    git_email: "{{ lookup('env', 'GIT_EMAIL') or 'dev@workshop.local' }}"
+    git_name: "{{ lookup('env', 'GIT_NAME') or 'Developer' }}"
 
   tasks:
     - name: Remove existing origin remote

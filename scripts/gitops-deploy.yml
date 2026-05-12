@@ -5,7 +5,7 @@
   gather_facts: false
   vars:
     project_root: "{{ playbook_dir }}/.."
-    app_name: "{{ lookup('env', 'APP_NAME') | default('fortune-cookie') }}"
+    app_name: "{{ lookup('env', 'APP_NAME') or 'fortune-cookie' }}"
     dev_ns: "{{ app_name }}-dev"
     build_ns: "{{ app_name }}-build"
     image: "image-registry.openshift-image-registry.svc:5000/{{ app_name }}-build/{{ app_name }}:latest"
