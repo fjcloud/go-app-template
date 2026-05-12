@@ -12,9 +12,7 @@
       },
       "models": {
         "qwen36": {
-          "name": "Qwen3.6-35B",
-          "attachment": false,
-          "temperature": 0.7
+          "name": "Qwen3.6-35B"
         }
       }
     }
