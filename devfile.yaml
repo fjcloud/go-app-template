@@ -36,7 +36,8 @@ commands:
           -o ${HOME}/.local/bin/gitpop \
           && chmod +x ${HOME}/.local/bin/gitpop \
           && echo "✓ gitpop installed" || echo "✗ gitpop install failed"
-        python3 -m pip install --user --quiet ansible kubernetes \
+        python3.9 -m ensurepip --user 2>/dev/null || true
+        python3.9 -m pip install --user --quiet ansible kubernetes openshift \
           && echo "✓ ansible + kubernetes installed" || echo "✗ pip install failed"
         echo "=== Bootstrap complete ==="
       workingDir: ${PROJECT_SOURCE}
