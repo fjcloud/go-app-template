@@ -16,12 +16,12 @@
         chdir: "{{ project_root }}"
       register: repo_url
 
-    - name: Create build namespace
+    - name: Create build namespace (via OpenShift ProjectRequest)
       kubernetes.core.k8s:
         state: present
         definition:
-          apiVersion: v1
-          kind: Namespace
+          apiVersion: project.openshift.io/v1
+          kind: ProjectRequest
           metadata:
             name: "{{ build_ns }}"
       ignore_errors: true
@@ -43,6 +43,7 @@
             kind: ClusterRole
             name: registry-editor
             apiGroup: rbac.authorization.k8s.io
+      ignore_errors: true
 
     - name: Apply Tekton Pipeline and workspace PVC
       kubernetes.core.k8s:
