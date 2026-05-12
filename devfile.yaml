@@ -35,7 +35,6 @@ commands:
           -o ${HOME}/.local/bin/gitpop
         chmod +x ${HOME}/.local/bin/gitpop
         pip install --quiet ansible kubernetes
-        ansible-galaxy collection install community.okd -q
         echo "Bootstrap complete."
       workingDir: ${PROJECT_SOURCE}
   - id: git-push
