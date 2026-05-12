@@ -24,6 +24,7 @@
           kind: Namespace
           metadata:
             name: "{{ build_ns }}"
+      ignore_errors: true
 
     - name: Grant pipeline service account registry-editor role
       kubernetes.core.k8s:
