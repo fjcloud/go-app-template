@@ -17,17 +17,11 @@
       register: repo_url
 
     - name: Create build project
-      community.okd.openshift:
-        state: present
-        definition:
-          apiVersion: project.openshift.io/v1
-          kind: ProjectRequest
-          metadata:
-            name: "{{ build_ns }}"
+      ansible.builtin.command: oc new-project {{ build_ns }}
       ignore_errors: true
 
     - name: Grant pipeline service account registry-editor role
-      community.okd.openshift:
+      kubernetes.core.k8s:
         state: present
         definition:
           apiVersion: rbac.authorization.k8s.io/v1
@@ -45,13 +39,13 @@
             apiGroup: rbac.authorization.k8s.io
 
     - name: Apply Tekton Pipeline and workspace PVC
-      community.okd.openshift:
+      kubernetes.core.k8s:
         state: present
         namespace: "{{ build_ns }}"
         definition: "{{ lookup('kubernetes.core.kustomize', dir=project_root + '/pipeline/base') }}"
 
     - name: Trigger PipelineRun
-      community.okd.openshift:
+      kubernetes.core.k8s:
         state: present
         definition:
           apiVersion: tekton.dev/v1
