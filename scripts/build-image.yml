@@ -16,8 +16,8 @@
         chdir: "{{ project_root }}"
       register: repo_url
 
-    - name: Create build namespace (via OpenShift ProjectRequest)
-      kubernetes.core.k8s:
+    - name: Create build project
+      community.okd.openshift:
         state: present
         definition:
           apiVersion: project.openshift.io/v1
@@ -27,7 +27,7 @@
       ignore_errors: true
 
     - name: Grant pipeline service account registry-editor role
-      kubernetes.core.k8s:
+      community.okd.openshift:
         state: present
         definition:
           apiVersion: rbac.authorization.k8s.io/v1
@@ -43,16 +43,15 @@
             kind: ClusterRole
             name: registry-editor
             apiGroup: rbac.authorization.k8s.io
-      ignore_errors: true
 
     - name: Apply Tekton Pipeline and workspace PVC
-      kubernetes.core.k8s:
+      community.okd.openshift:
         state: present
         namespace: "{{ build_ns }}"
         definition: "{{ lookup('kubernetes.core.kustomize', dir=project_root + '/pipeline/base') }}"
 
     - name: Trigger PipelineRun
-      kubernetes.core.k8s:
+      community.okd.openshift:
         state: present
         definition:
           apiVersion: tekton.dev/v1
@@ -61,7 +60,6 @@
             generateName: build-app-
             namespace: "{{ build_ns }}"
           spec:
-            serviceAccountName: pipeline
             pipelineRef:
               name: build-app
             params:
