@@ -3,6 +3,8 @@
   hosts: localhost
   connection: local
   gather_facts: false
+  environment:
+    K8S_AUTH_KUBECONFIG: "{{ lookup('env', 'KUBECONFIG') | default('/home/user/.kube/config') }}"
   vars:
     project_root: "{{ playbook_dir }}/.."
     app_name: "{{ lookup('env', 'APP_NAME') or 'fortune-cookie' }}"
