@@ -16,6 +16,8 @@ components:
       env:
         - name: SHELL
           value: /bin/bash
+        - name: APP_NAME
+          value: fortune-cookie
         - name: GIT_SERVER
           value: https://gitpop.apps.sno.msl.cloud
         - name: PATH
