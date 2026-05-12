@@ -25,6 +25,7 @@
           kind: Namespace
           metadata:
             name: "{{ dev_ns }}"
+      ignore_errors: true
 
     - name: Allow dev namespace to pull images from build namespace
       kubernetes.core.k8s:
