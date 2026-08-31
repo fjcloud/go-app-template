@@ -94,7 +94,7 @@ Each playbook prints named task output. Wait for it to succeed before running th
 If a task fails, the error is shown inline — read it and fix the root cause.
 
 ## In-cluster LLM service
-- Base URL : http://qwen36-predictor.llm-inference.svc.cluster.local:8080/v1
-- Model ID  : qwen36
+- Base URL : http://qwen3-predictor.llm-serving.svc.cluster.local:8080/v1
+- Model ID  : qwen3
 - API       : OpenAI-compatible
 - Always add `"chat_template_kwargs": {"enable_thinking": false}` to every request body

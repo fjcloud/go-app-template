@@ -2,15 +2,14 @@
 
 This is the **template repository** for the *AI-Powered Developer Platform on ROSA* workshop.
 
-Developers clone this template into their OpenShift DevSpace, then use **OpenCode** (an AI coding assistant backed by the in-cluster Qwen3.6 LLM) to generate a Fortune Cookie Go application and deploy it to their own namespace.
+Developers launch this template in OpenShift Dev Spaces. **OpenCode** is injected by the platform (Dev Spaces AI tool registry) and talks to the in-cluster Qwen3.8 LLM. The developer generates a Fortune Cookie Go application and deploys it to their own namespace.
 
 ## What's in this repo
 
 | Path | Description |
 |------|-------------|
 | `AGENTS.md` | Platform conventions read by OpenCode before every session |
-| `opencode.json` | LLM configuration pointing at the in-cluster Qwen3.6 service |
-| `devfile.yaml` | DevSpaces workspace definition (installs tools, exposes tasks) |
+| `devfile.yaml` | Dev Spaces workspace (gitpop + Ansible + one-click tasks). OpenCode is not installed here. |
 | `deploy/base/` | Kustomize manifests for the application (Deployment, Service, Route) |
 | `pipeline/base/` | Kustomize manifests for the Tekton build pipeline |
 | `gitops/base/` | Kustomize manifests for the developer-owned Argo CD instance |
@@ -20,17 +19,17 @@ Developers clone this template into their OpenShift DevSpace, then use **OpenCod
 
 ## How it works
 
-1. **Platform Engineer** initializes this template and publishes it to the Git server
-2. **Developer** launches a DevSpace from this template URL
+1. **Platform Engineer** publishes this template and registers OpenCode + Qwen3.8 in Dev Spaces
+2. **Developer** launches a Dev Space from the template URL (`?ai-provider=opencodeai/opencode`)
 3. **OpenCode** reads `AGENTS.md` and generates `main.go`, `go.mod`, and `Dockerfile`
 4. **OpenCode** runs the three Ansible playbooks sequentially to build and deploy the app
 
 ## Prerequisites
 
 - Access to an OpenShift cluster with ROSA
-- OpenShift AI (RHOAI) with Qwen3.6 model deployed in `llm-inference` namespace
+- OpenShift AI (RHOAI) with Qwen3.8 model deployed in `llm-serving` namespace
 - OpenShift Pipelines and OpenShift GitOps operators installed
-- OpenShift Dev Spaces operator installed
+- OpenShift Dev Spaces 3.29+ with the workshop AI tool registry applied
 
 ## Workshop
 

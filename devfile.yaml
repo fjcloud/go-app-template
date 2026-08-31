@@ -1,7 +1,7 @@
 schemaVersion: 2.2.2
 metadata:
   name: go-app-workspace
-  description: Go development environment with OpenCode AI assistant
+  description: Go development environment (OpenCode is injected by Dev Spaces)
 attributes:
   controller.devfile.io/storage-type: per-user
 components:
@@ -20,17 +20,16 @@ components:
           value: fortune-cookie
         - name: GIT_SERVER
           value: https://gitpop.apps.sno.msl.cloud
+        # Keep /injected-tools/bin first so the Dev Spaces AI injector stays on PATH.
         - name: PATH
-          value: /home/user/.opencode/bin:/home/user/.local/bin:/usr/local/go/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+          value: /injected-tools/bin:/home/user/.local/bin:/usr/local/go/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
 commands:
   - id: bootstrap
     exec:
       component: dev
-      label: "Install tools (OpenCode + gitpop + Ansible)"
+      label: "Install gitpop and Ansible"
       commandLine: |
         echo "=== Bootstrap starting ==="
-        curl -fsSL https://opencode.ai/install | bash \
-          && echo "✓ opencode installed" || echo "✗ opencode install failed"
         mkdir -p ${HOME}/.local/bin
         curl -fsSL "${GIT_SERVER}/dl/gitpop?os=linux&arch=amd64" \
           -o ${HOME}/.local/bin/gitpop \
