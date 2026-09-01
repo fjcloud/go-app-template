@@ -32,9 +32,11 @@ Then: `CGO_ENABLED=0 go build -buildvcs=false -o /dev/null .`
 
 Image: `image-registry.openshift-image-registry.svc:5000/${APP_NAME}-build/${APP_NAME}:latest`
 
+Create namespaces `${APP_NAME}-build` and `${APP_NAME}-dev`. Never use namespace `default` for the app, Argo CD, or the Application.
+
 1. `gitpop init --host "$GIT_SERVER" --name "$APP_NAME"`, commit, push `main`.
-2. Namespace `${APP_NAME}-build`: privileged SCC + registry-editor on SA `pipeline`, `oc apply -k pipeline/base`, PipelineRun of `build-app` (params `git-url` = origin, `image` = above; workspace PVC `build-ws`). Wait Succeeded.
-3. Namespace `${APP_NAME}-dev`: image-puller for `default` from the build ns, set Deployment `image:`, push, `oc apply -k gitops/base`, Argo CD Application (repo origin, path `deploy/base`, auto-sync). Wait Healthy. Print app + `argocd-server` Route URLs.
+2. In `${APP_NAME}-build`: privileged SCC + registry-editor on SA `pipeline`, `oc apply -k pipeline/base -n ${APP_NAME}-build`, PipelineRun of `build-app` (params `git-url` = origin, `image` = above; workspace PVC `build-ws`). Wait Succeeded.
+3. In `${APP_NAME}-dev`: grant the `default` ServiceAccount image-puller from the build ns, set Deployment `image:`, push. `oc apply -k gitops/base -n ${APP_NAME}-dev`. Create the Argo CD Application **in ${APP_NAME}-dev** (destination namespace `${APP_NAME}-dev`, repo origin, path `deploy/base`, auto-sync). Wait Healthy. Print app + `argocd-server` Route URLs.
 
 Later change: local build, git push, new PipelineRun, `oc rollout restart deployment/$APP_NAME -n ${APP_NAME}-dev`.
 
