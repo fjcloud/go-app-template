@@ -19,7 +19,7 @@ Developers launch this template in OpenShift Dev Spaces. **OpenCode** is injecte
 1. **Platform Engineer** publishes this template and registers OpenCode + Qwen3.8 in Dev Spaces
 2. **Developer** launches a Dev Space from the template URL (`?ai-provider=opencodeai/opencode`)
 3. **OpenCode** (Qwen3.8) reads `AGENTS.md` and generates `main.go`, `go.mod`, and `Dockerfile`
-4. **OpenCode** runs gitpop + `oc` from `AGENTS.md` to push, build, and deploy — no Ansible
+4. **OpenCode** reads short `AGENTS.md` and runs gitpop + `oc`
 
 ## Prerequisites
 
