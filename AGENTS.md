@@ -1,16 +1,16 @@
 # AGENTS.md — Go App Platform Conventions
 
-You are running inside an OpenShift DevSpace on ROSA. `oc` is authenticated.
-`$GIT_SERVER` and `$APP_NAME` are set in the terminal.
+You are in an OpenShift Dev Space on ROSA. `oc` is already authenticated.
+`$GIT_SERVER` and `$APP_NAME` are set (default `APP_NAME=fortune-cookie`).
+
+Do **not** create Ansible playbooks or a `scripts/` directory. Follow the commands in this file with your bash tool. Wait for each phase to succeed before the next. If a command fails, read the error, fix the cause, retry that phase.
 
 ## Files YOU must generate
 
-For every new application, generate these files:
-
 ### main.go
-Entry point. HTTP server on port 8080. Must expose:
-- `GET /` — the application UI or API response
-- `GET /healthz` — returns `{"status":"ok"}` (used by Kubernetes probes)
+HTTP server on port 8080:
+- `GET /` — application UI or API
+- `GET /healthz` — `{"status":"ok"}` (Kubernetes probes)
 
 ### go.mod
 ```
@@ -19,7 +19,7 @@ go 1.22
 ```
 
 ### Dockerfile
-Use exactly this two-stage template — adapt only the `COPY` and `RUN` lines if the app has additional source files:
+Use this two-stage template. Change only `COPY` / `RUN` if there are extra source files:
 
 ```dockerfile
 FROM registry.access.redhat.com/ubi9/go-toolset:latest AS builder
@@ -36,65 +36,149 @@ EXPOSE 8080
 ENTRYPOINT ["/usr/local/bin/app"]
 ```
 
-Key constraints:
-- Build in `/tmp/build` (go-toolset runs as UID 1001, cannot write to `/app`)
-- `-buildvcs=false` required (Tekton git-clone workspace lacks full git metadata)
-- `USER 1001` in image; OpenShift overrides at runtime with a namespace UID
+- Build in `/tmp/build` (go-toolset is UID 1001; cannot write to `/app`)
+- `-buildvcs=false` (Tekton git-clone workspace has no full git metadata)
+- `USER 1001` in the image; OpenShift assigns a namespace UID at runtime
 
-## Files already in the repository (do not regenerate)
+## Files already in the repository (do not rewrite)
 
 ```
-deploy/base/          # Kustomize manifests for the app — only update image: field
-pipeline/base/        # Kustomize manifests for the Tekton build pipeline
-gitops/base/          # Kustomize manifests for the developer Argo CD instance
-scripts/
-  git-push.yml        # Ansible: creates personal Git repo + pushes code
-  build-image.yml     # Ansible: applies pipeline/base + Tekton PipelineRun
-  gitops-deploy.yml   # Ansible: applies gitops/base + ArgoCD Application
+deploy/base/      # app manifests — only change the image: field when deploying
+pipeline/base/    # Tekton Pipeline + PVC
+gitops/base/      # developer Argo CD instance + AppProject
+devfile.yaml      # Dev Spaces workspace
 ```
 
-## Build verification
+## Verify the binary
 
-After generating all files, always run:
+After generating files, always:
+
 ```bash
 CGO_ENABLED=0 go build -buildvcs=false -o /dev/null .
 ```
-Fix any compile errors before proceeding.
 
-## Kubernetes / OpenShift requirements
+Fix compile errors before deploying.
+
+## OpenShift constraints (`deploy/base`)
+
 Every Deployment MUST have:
 - resources.requests: cpu 50m, memory 64Mi
 - resources.limits: cpu 200m, memory 128Mi
-- livenessProbe + readinessProbe on /healthz port 8080
-- Label app.kubernetes.io/name: <app-name>
-- Route with tls.termination: edge, insecureEdgeTerminationPolicy: Redirect
-  Do NOT set spec.host — leave it empty so OpenShift auto-generates the hostname.
-- Do NOT set runAsUser — OpenShift assigns a UID from the namespace range (restricted-v2 SCC).
-- Pod securityContext:
-    runAsNonRoot: true
-    seccompProfile:
-      type: RuntimeDefault
-- Container securityContext:
-    allowPrivilegeEscalation: false
-    capabilities:
-      drop: ["ALL"]
-    runAsNonRoot: true
+- livenessProbe + readinessProbe: HTTP GET `/healthz` on port 8080
+- label `app.kubernetes.io/name: <app>`
+- Route: `tls.termination: edge`, `insecureEdgeTerminationPolicy: Redirect`
+- Do NOT set `spec.host` — OpenShift generates the hostname
+- Do NOT set `runAsUser` — restricted-v2 SCC assigns the UID
+- Pod securityContext: `runAsNonRoot: true`, `seccompProfile.type: RuntimeDefault`
+- Container securityContext: `allowPrivilegeEscalation: false`, `capabilities.drop: ["ALL"]`, `runAsNonRoot: true`
 
-## Deploy workflow — run the Ansible playbooks
+## Deploy — three phases, git + oc only
 
-Once the build is verified, run these playbooks in order using your bash tool:
+### Phase 1 — Push to the personal Git server
 
 ```bash
-ansible-playbook scripts/git-push.yml
-ansible-playbook scripts/build-image.yml      # takes 3-5 min — Tekton PipelineRun
-ansible-playbook scripts/gitops-deploy.yml    # takes 2-3 min — ArgoCD startup
+git remote remove origin 2>/dev/null || true
+gitpop init --host "$GIT_SERVER" --name "$APP_NAME"
+git config user.email "${GIT_EMAIL:-dev@workshop.local}"
+git config user.name "${GIT_NAME:-Developer}"
+git add -A
+git diff --staged --quiet || git commit -m "feat: $APP_NAME initial implementation"
+git push -u origin main
+git remote get-url origin
 ```
 
-Each playbook prints named task output. Wait for it to succeed before running the next.
-If a task fails, the error is shown inline — read it and fix the root cause.
+### Phase 2 — Build the image (Tekton)
 
-## In-cluster LLM service
-- Base URL : http://qwen3-predictor.llm-serving.svc.cluster.local:8080/v1
-- Model ID  : qwen3
-- API       : OpenAI-compatible
-- Always add `"chat_template_kwargs": {"enable_thinking": false}` to every request body
+```bash
+BUILD_NS="${APP_NAME}-build"
+IMAGE="image-registry.openshift-image-registry.svc:5000/${APP_NAME}-build/${APP_NAME}:latest"
+REPO=$(git remote get-url origin)
+
+oc new-project "$BUILD_NS" 2>/dev/null || true
+oc project "$BUILD_NS"
+oc adm policy add-scc-to-user privileged -z pipeline -n "$BUILD_NS"
+oc create rolebinding pipeline-registry-editor \
+  --clusterrole=registry-editor \
+  --serviceaccount="${BUILD_NS}:pipeline" \
+  -n "$BUILD_NS" 2>/dev/null || true
+oc apply -k pipeline/base -n "$BUILD_NS"
+
+PR=$(oc create -n "$BUILD_NS" -o name -f - <<EOF
+apiVersion: tekton.dev/v1
+kind: PipelineRun
+metadata:
+  generateName: build-app-
+spec:
+  pipelineRef:
+    name: build-app
+  params:
+    - name: git-url
+      value: ${REPO}
+    - name: image
+      value: ${IMAGE}
+  workspaces:
+    - name: source
+      persistentVolumeClaim:
+        claimName: build-ws
+EOF
+)
+echo "Waiting for $PR ..."
+oc wait -n "$BUILD_NS" "$PR" --for=condition=Succeeded --timeout=15m
+```
+
+### Phase 3 — Deploy with your Argo CD instance
+
+```bash
+DEV_NS="${APP_NAME}-dev"
+BUILD_NS="${APP_NAME}-build"
+IMAGE="image-registry.openshift-image-registry.svc:5000/${APP_NAME}-build/${APP_NAME}:latest"
+REPO=$(git remote get-url origin)
+
+oc new-project "$DEV_NS" 2>/dev/null || true
+oc create rolebinding image-puller \
+  --clusterrole=system:image-puller \
+  --serviceaccount="${DEV_NS}:default" \
+  -n "$BUILD_NS" 2>/dev/null || true
+
+sed -i "s|image: .*|image: ${IMAGE}|" deploy/base/deployment.yaml
+git add deploy/base/deployment.yaml
+git diff --staged --quiet || git commit -m "ci: update image to ${APP_NAME}:latest"
+git push
+
+oc apply -k gitops/base -n "$DEV_NS"
+oc wait -n "$DEV_NS" argocd/argocd --for=jsonpath='{.status.phase}'=Available --timeout=300s
+
+oc apply -n "$DEV_NS" -f - <<EOF
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: ${APP_NAME}
+  namespace: ${DEV_NS}
+spec:
+  project: default
+  source:
+    repoURL: ${REPO}
+    targetRevision: main
+    path: deploy/base
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: ${DEV_NS}
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+EOF
+
+oc wait -n "$DEV_NS" "application.argoproj.io/${APP_NAME}" \
+  --for=jsonpath='{.status.health.status}'=Healthy --timeout=300s
+
+echo "App:    https://$(oc get route $APP_NAME -n $DEV_NS -o jsonpath='{.spec.host}')"
+echo "ArgoCD: https://$(oc get route argocd-server -n $DEV_NS -o jsonpath='{.spec.host}')"
+```
+
+## Ship a later change
+
+1. `CGO_ENABLED=0 go build -buildvcs=false -o /dev/null .`
+2. `git add -A && git commit -m "feat: update $APP_NAME" && git push`
+3. Repeat Phase 2 (new PipelineRun)
+4. `oc rollout restart deployment/$APP_NAME -n ${APP_NAME}-dev` so pods pull `:latest`
