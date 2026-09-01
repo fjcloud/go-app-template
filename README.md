@@ -13,6 +13,7 @@ Developers launch this template in OpenShift Dev Spaces. **OpenCode** is injecte
 | `deploy/base/` | Kustomize manifests for the application (Deployment, Service, Route) |
 | `pipeline/base/` | Kustomize manifests for the Tekton build pipeline |
 | `gitops/base/` | Kustomize manifests for the developer-owned Argo CD instance |
+| `opencode.json` | Pins OpenCode to in-cluster Qwen3.8 (MaaS). API key comes from `$OPENAI_API_KEY`. |
 
 ## How it works
 

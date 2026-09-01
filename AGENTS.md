@@ -2,7 +2,7 @@
 
 OpenShift Dev Space. `oc` is authenticated. `$GIT_SERVER` and `$APP_NAME` are set.
 
-No Ansible. No `scripts/`. Do not rewrite `deploy/`, `pipeline/`, `gitops/`, or `devfile.yaml` (only change `image:` in `deploy/base/deployment.yaml` when shipping).
+No Ansible. No `scripts/`. Do not rewrite `deploy/`, `pipeline/`, `gitops/`, `devfile.yaml`, or `opencode.json` (only change `image:` in `deploy/base/deployment.yaml` when shipping).
 
 ## Generate
 
