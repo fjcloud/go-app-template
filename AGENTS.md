@@ -36,7 +36,7 @@ Create namespaces `${APP_NAME}-build` and `${APP_NAME}-dev`. Never use namespace
 
 1. `gitpop init --host "$GIT_SERVER" --name "$APP_NAME"`, commit, push `main`.
 2. In `${APP_NAME}-build`: privileged SCC + registry-editor on SA `pipeline`, `oc apply -k pipeline/base -n ${APP_NAME}-build`, PipelineRun of `build-app` (params `git-url` = origin, `image` = above; workspace PVC `build-ws`). Wait Succeeded.
-3. In `${APP_NAME}-dev`: grant the `default` ServiceAccount image-puller from the build ns, set Deployment `image:`, push. `oc apply -k gitops/base -n ${APP_NAME}-dev`. Create the Argo CD Application **in ${APP_NAME}-dev** (destination namespace `${APP_NAME}-dev`, repo origin, path `deploy/base`, auto-sync). Wait Healthy. Print app + `argocd-server` Route URLs.
+3. In `${APP_NAME}-build`: `oc policy add-role-to-user system:image-puller system:serviceaccount:${APP_NAME}-dev:default -n ${APP_NAME}-build` (namespaced Role `system:image-puller` — there is no ClusterRole named `image-puller`). Then in `${APP_NAME}-dev`: set Deployment `image:`, push. `oc apply -k gitops/base -n ${APP_NAME}-dev`. Create the Argo CD Application **in ${APP_NAME}-dev** (destination namespace `${APP_NAME}-dev`, repo origin, path `deploy/base`, auto-sync). Wait Healthy. Print app + `argocd-server` Route URLs.
 
 Later change: local build, git push, new PipelineRun, `oc rollout restart deployment/$APP_NAME -n ${APP_NAME}-dev`.
 
