@@ -14,8 +14,8 @@
         "qwen3": {
           "name": "Qwen3.8",
           "limit": {
-            "context": 40960,
-            "output": 8192
+            "context": 262144,
+            "output": 32768
           }
         }
       }
