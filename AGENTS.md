@@ -30,6 +30,11 @@ Then: `CGO_ENABLED=0 go build -buildvcs=false -o /dev/null .`
 
 ## Deploy (git + oc)
 
+Before deploying, `oc auth can-i '*' '*' --all-namespaces` must return yes.
+If not, stop and ask the participant to log the terminal into the assigned lab
+administrator using the console's Copy login command. Never search for or print
+credentials, tokens or other kubeconfigs. Browser SSO alone does not log in oc.
+
 Image: `image-registry.openshift-image-registry.svc:5000/${APP_NAME}-build/${APP_NAME}:latest`
 
 Create namespaces `${APP_NAME}-build` and `${APP_NAME}-dev`. Never use namespace `default` for the app, Argo CD, or the Application.
