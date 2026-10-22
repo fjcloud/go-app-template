@@ -1,34 +1,22 @@
-# Go App Template — AI-Powered Developer Platform on ROSA
+# Go App Template — ARO Live Transcript
 
-This is the **template repository** for the *AI-Powered Developer Platform on ROSA* workshop.
+Use the `aro-transcription` branch for the [ARO workshop](https://fjcloud.github.io/aro-ai-app-platform/modules/index.html). The `main` branch remains the ROSA Fortune Cookie template.
 
-Developers launch this template in OpenShift Dev Spaces. **OpenCode** is injected by the platform (Dev Spaces AI tool registry) and talks to the in-cluster **Qwen3.8** LLM. The developer generates a Fortune Cookie Go application and deploys it to their own namespace.
+OpenCode runs in Dev Spaces and uses **DeepSeek-V4 Pro on Foundry** to write the Go app. **RedHatAI Whisper Large v3 Turbo INT8**, served through OpenShift AI and Red Hat AI Inference on one T4, transcribes the app’s audio. These are separate model paths.
 
-## What's in this repo
+The browser captures short WAV clips and sends them to the Go backend, which calls the internal Whisper service. Results appear after each clip; this is near-real-time transcription.
 
-| Path | Description |
-|------|-------------|
-| `AGENTS.md` | Platform conventions and the only deploy runbook — OpenCode follows these `git` + `oc` commands |
-| `devfile.yaml` | Dev Spaces workspace (installs gitpop on start). OpenCode is not installed here. |
-| `deploy/base/` | Kustomize manifests for the application (Deployment, Service, Route) |
-| `pipeline/base/` | Kustomize manifests for the Tekton build pipeline |
-| `gitops/base/` | Kustomize manifests for the developer-owned Argo CD instance |
-| `opencode.json` | Pins OpenCode to in-cluster Qwen3.8 (MaaS). API key comes from `$OPENAI_API_KEY`. |
+| Path | Purpose |
+| --- | --- |
+| `AGENTS.md` | Generation instructions, delivery steps and the speech API contract |
+| `devfile.yaml` | Browser workspace and ephemeral Git client |
+| `opencode.json` | Project model configuration; Lab 2.1 replaces the inherited pin with the platform’s Foundry configuration |
+| `deploy/base/` | Go application Deployment, Service and HTTPS Route |
+| `pipeline/base/` | Tekton image build |
+| `gitops/base/` | Developer-owned Argo CD instance |
 
-## How it works
+Follow the workshop to prepare the platform, authenticate `oc` inside the workspace and copy the platform model configuration. Then plan, generate, build and deploy with OpenCode. Verify the matching Git revision in Argo CD and test the microphone in the HTTPS app. The model key stays in workspace environment variables; speech audio goes to Whisper through the backend.
 
-1. **Platform Engineer** publishes this template and registers OpenCode + Qwen3.8 in Dev Spaces
-2. **Developer** launches a Dev Space from the template URL (`?ai-provider=opencodeai/opencode`)
-3. **OpenCode** (Qwen3.8) reads `AGENTS.md` and generates `main.go`, `go.mod`, and `Dockerfile`
-4. **OpenCode** reads short `AGENTS.md` and runs gitpop + `oc`
+The Dockerfile ships only the Go binary, so embed all web assets. The [tested reference app](https://github.com/fjcloud/aro-ai-app-platform/tree/main/examples/live-transcript) provides the capture and proxy baseline. The exercise adds a Copy transcript button.
 
-## Prerequisites
-
-- Access to an OpenShift cluster with ROSA
-- OpenShift AI (RHOAI) with Qwen3.8 model deployed in `llm-serving` namespace
-- OpenShift Pipelines and OpenShift GitOps operators installed
-- OpenShift Dev Spaces 3.29+ with the workshop AI tool registry applied
-
-## Workshop
-
-Full workshop instructions: https://fjcloud.github.io/rosa-ai-app-platform/
+This template uses an external ephemeral Git service and fixed app namespaces. Use one participant per assigned cluster unless the facilitator adapts app names and permissions. Export code before the RHDP assignment expires.
