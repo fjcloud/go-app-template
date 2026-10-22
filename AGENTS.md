@@ -71,3 +71,28 @@ Later change: local build, git push, new PipelineRun (same `oc create -f -`), `o
 ## OpenShift
 
 Deployment: requests 50m/64Mi, limits 200m/128Mi, probes `/healthz:8080`, `runAsNonRoot` + drop ALL, no `runAsUser`, no Route `spec.host`, TLS edge + Redirect.
+
+## Speech application contract
+
+The coding LLM is DeepSeek on Foundry. Whisper is a separate OpenShift AI service
+used by the application, not by OpenCode. Build a Go browser microphone app.
+Use Web Audio + AudioWorklet to produce independent mono 16 kHz PCM16 WAV clips
+(1–4 seconds), POST them sequentially to the Go backend, display returned text.
+Do not use the browser SpeechRecognition API or send microphone audio to Foundry.
+Keep audio only in memory, skip silence, bound queued clips, flush on Stop, stop
+all microphone tracks on Stop/error/page exit, show permission/network errors.
+Use textContent for transcripts, never innerHTML. Scripts must be external files
+so a restrictive Content-Security-Policy works. No external JS dependencies.
+
+Backend POST /api/transcribe accepts a WAV file and language (fr/en/auto), limits
+upload size and concurrency, validates mono PCM16 16 kHz WAV duration <=10 seconds,
+forwards multipart model=whisper and response_format=json to
+WHISPER_URL/audio/transcriptions. Default WHISPER_URL is
+http://whisper-predictor.speech-serving.svc.cluster.local:8080/v1 .
+Use request deadlines, never log audio or credentials, return useful generic errors.
+The browser only calls its own Go origin. No CORS, public model Route or model key
+in browser code. Transcription is near-real-time via short clips, not native Whisper
+WebSocket streaming. French is the default language; offer English and automatic.
+
+A tested reference is available in the ARO workshop repository at
+examples/live-transcript. Use it to diagnose audio/protocol issues if necessary.

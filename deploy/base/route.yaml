@@ -1,13 +1,13 @@
 apiVersion: route.openshift.io/v1
 kind: Route
 metadata:
-  name: fortune-cookie
+  name: live-transcript
   labels:
-    app.kubernetes.io/name: fortune-cookie
+    app.kubernetes.io/name: live-transcript
 spec:
   to:
     kind: Service
-    name: fortune-cookie
+    name: live-transcript
   port:
     targetPort: http
   tls:
