@@ -30,6 +30,9 @@ Then: `CGO_ENABLED=0 go build -buildvcs=false -o /dev/null .`
 
 ## Deploy (git + oc)
 
+When asked to ship, complete Git, Tekton and Argo CD and wait for the matching
+Git revision to be Synced / Healthy. A successful local build alone is not shipping.
+
 Before deploying, `oc auth can-i '*' '*' --all-namespaces` must return yes.
 If not, stop and ask the participant to log the terminal into the assigned lab
 administrator using the console's Copy login command. Never search for or print
