@@ -30,11 +30,19 @@ Then: `CGO_ENABLED=0 go build -buildvcs=false -o /dev/null .`
 
 ## Deploy (git + oc)
 
+When asked to ship, complete Git, Tekton and Argo CD and wait for the matching
+Git revision to be Synced / Healthy. A successful local build alone is not shipping.
+
+Before deploying, `oc auth can-i '*' '*' --all-namespaces` must return yes.
+If not, stop and ask the participant to log the terminal into the assigned lab
+administrator using the console's Copy login command. Never search for or print
+credentials, tokens or other kubeconfigs. Browser SSO alone does not log in oc.
+
 Image: `image-registry.openshift-image-registry.svc:5000/${APP_NAME}-build/${APP_NAME}:latest`
 
 Create namespaces `${APP_NAME}-build` and `${APP_NAME}-dev`. Never use namespace `default` for the app, Argo CD, or the Application.
 
-1. If `git config user.email` is empty: `git config user.email "dev@workshop.local"` and `git config user.name "developer"`. Then `gitpop init --host "$GIT_SERVER" --name "$APP_NAME"`, commit, push `main`.
+1. If `git config user.email` is empty: `git config user.email "dev@workshop.local"` and `git config user.name "developer"`. Then `gitpop init --host "$GIT_SERVER" --name "$APP_NAME"`, run `git branch -M main` for the personal repository, commit, push `main`.
 2. In `${APP_NAME}-build`: ensure SA `pipeline` exists, grant its build SCC with `oc adm policy add-scc-to-user privileged -z pipeline -n ${APP_NAME}-build`, then `oc apply -k pipeline/base -n ${APP_NAME}-build`. Start `build-app` with `oc create -f -` (do **not** use `oc create pipelinerun --param` — this `oc` rejects it):
 
 ```
