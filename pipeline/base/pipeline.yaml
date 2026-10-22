@@ -18,7 +18,7 @@ spec:
           - name: kind
             value: task
           - name: name
-            value: git-clone
+            value: workshop-git-clone
           - name: namespace
             value: openshift-pipelines
       params:
@@ -37,7 +37,7 @@ spec:
           - name: kind
             value: task
           - name: name
-            value: buildah
+            value: workshop-buildah
           - name: namespace
             value: openshift-pipelines
       params:
