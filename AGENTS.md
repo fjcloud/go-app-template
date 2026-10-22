@@ -88,7 +88,7 @@ Backend POST /api/transcribe accepts a WAV file and language (fr/en/auto), limit
 upload size and concurrency, validates mono PCM16 16 kHz WAV duration <=10 seconds,
 forwards multipart model=whisper and response_format=json to
 WHISPER_URL/audio/transcriptions. Default WHISPER_URL is
-http://whisper-predictor.speech-serving.svc.cluster.local:8080/v1 .
+http://whisper-predictor.speech-serving.svc.cluster.local/v1 .
 Use request deadlines, never log audio or credentials, return useful generic errors.
 The browser only calls its own Go origin. No CORS, public model Route or model key
 in browser code. Transcription is near-real-time via short clips, not native Whisper
