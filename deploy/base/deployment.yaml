@@ -21,6 +21,9 @@ spec:
       containers:
         - name: live-transcript
           image: placeholder
+          env:
+            - name: WHISPER_URL
+              value: http://whisper-predictor.speech-serving.svc.cluster.local/v1
           ports:
             - containerPort: 8080
           resources:
