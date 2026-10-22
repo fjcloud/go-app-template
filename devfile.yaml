@@ -1,7 +1,7 @@
 schemaVersion: 2.2.2
 metadata:
   name: live-transcript-workspace
-  description: Go development environment (OpenCode is injected by Dev Spaces)
+  description: Browser transcription with Whisper on OpenShift AI (OpenCode uses Foundry)
 attributes:
   controller.devfile.io/storage-type: per-user
 components:

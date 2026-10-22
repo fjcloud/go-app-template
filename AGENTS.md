@@ -76,6 +76,8 @@ Deployment: requests 50m/64Mi, limits 200m/128Mi, probes `/healthz:8080`, `runAs
 
 The coding LLM is DeepSeek on Foundry. Whisper is a separate OpenShift AI service
 used by the application, not by OpenCode. Build a Go browser microphone app.
+Embed all HTML/JS/CSS using go:embed: the Dockerfile ships only the binary.
+Serve only embedded assets; never serve the project directory or .git files.
 Use Web Audio + AudioWorklet to produce independent mono 16 kHz PCM16 WAV clips
 (1–4 seconds), POST them sequentially to the Go backend, display returned text.
 Do not use the browser SpeechRecognition API or send microphone audio to Foundry.
@@ -84,15 +86,18 @@ all microphone tracks on Stop/error/page exit, show permission/network errors.
 Use textContent for transcripts, never innerHTML. Scripts must be external files
 so a restrictive Content-Security-Policy works. No external JS dependencies.
 
-Backend POST /api/transcribe accepts a WAV file and language (fr/en/auto), limits
+Backend POST /api/transcribe accepts multipart field file (WAV) and language (fr/en/empty), limits
 upload size and concurrency, validates mono PCM16 16 kHz WAV duration <=10 seconds,
 forwards multipart model=whisper and response_format=json to
 WHISPER_URL/audio/transcriptions. Default WHISPER_URL is
 http://whisper-predictor.speech-serving.svc.cluster.local/v1 .
+Automatic detection means omitting the upstream language field, not language=auto.
 Use request deadlines, never log audio or credentials, return useful generic errors.
 The browser only calls its own Go origin. No CORS, public model Route or model key
 in browser code. Transcription is near-real-time via short clips, not native Whisper
 WebSocket streaming. French is the default language; offer English and automatic.
 
 A tested reference is available in the ARO workshop repository at
-examples/live-transcript. Use it to diagnose audio/protocol issues if necessary.
+examples/live-transcript:
+https://github.com/fjcloud/aro-ai-app-platform/tree/main/examples/live-transcript
+Reuse this tested capture/proxy implementation as the baseline for the app.
