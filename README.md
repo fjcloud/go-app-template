@@ -20,3 +20,12 @@ Follow the workshop to prepare the platform, authenticate `oc` inside the worksp
 The Dockerfile ships only the Go binary, so embed all web assets. The [tested reference app](https://github.com/fjcloud/aro-ai-app-platform/tree/main/examples/live-transcript) provides the capture and proxy baseline. The exercise adds a Copy transcript button.
 
 This template uses an external ephemeral Git service and fixed app namespaces. Use one participant per assigned cluster unless the facilitator adapts app names and permissions. Export code before the RHDP assignment expires.
+
+The Deployment already points to the internal image built by Tekton and uses `imagePullPolicy: Always`. The pipeline runs `clone → validate-image → build`: a placeholder, wrong namespace or mismatched deployment image stops the build with an explicit error. For older personal checkouts, fix the image in Git before rebuilding; Argo CD reads the committed manifest.
+
+Template regression checks:
+
+```sh
+python3 -m pip install -r tests/requirements.txt
+python3 -m unittest discover -s tests
+```

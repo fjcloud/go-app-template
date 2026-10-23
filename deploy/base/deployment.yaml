@@ -20,7 +20,8 @@ spec:
           type: RuntimeDefault
       containers:
         - name: live-transcript
-          image: placeholder
+          image: image-registry.openshift-image-registry.svc:5000/live-transcript-build/live-transcript:latest
+          imagePullPolicy: Always
           env:
             - name: WHISPER_URL
               value: http://whisper-predictor.speech-serving.svc.cluster.local/v1

@@ -8,6 +8,7 @@ spec:
       type: string
     - name: image
       type: string
+      default: image-registry.openshift-image-registry.svc:5000/live-transcript-build/live-transcript:latest
   workspaces:
     - name: source
   tasks:
@@ -29,8 +30,60 @@ spec:
       workspaces:
         - name: output
           workspace: source
-    - name: build
+    - name: validate-image
       runAfter: [clone]
+      params:
+        - name: image
+          value: $(params.image)
+      workspaces:
+        - name: source
+          workspace: source
+      taskSpec:
+        params:
+          - name: image
+            type: string
+        workspaces:
+          - name: source
+        steps:
+          - name: check-deployment-image
+            image: registry.redhat.io/openshift4/ose-cli-rhel9:v4.21
+            workingDir: $(workspaces.source.path)
+            env:
+              - name: HOME
+                value: /tmp
+              - name: BUILD_IMAGE
+                value: $(params.image)
+              - name: BUILD_NAMESPACE
+                value: $(context.taskRun.namespace)
+            computeResources:
+              requests:
+                cpu: 50m
+                memory: 128Mi
+              limits:
+                memory: 256Mi
+            script: |
+              #!/bin/sh
+              set -eu
+              case "$BUILD_NAMESPACE" in
+                *-build) ;;
+                *) echo "Run this pipeline in the app's <app-name>-build namespace." >&2; exit 1 ;;
+              esac
+              expected="image-registry.openshift-image-registry.svc:5000/${BUILD_NAMESPACE}/${BUILD_NAMESPACE%-build}:latest"
+              if [ "$BUILD_IMAGE" != "$expected" ]; then
+                printf 'Invalid build image: %s\nExpected: %s\n' "$BUILD_IMAGE" "$expected" >&2
+                exit 1
+              fi
+              rendered=$(mktemp)
+              trap 'rm -f "$rendered"' EXIT
+              oc kustomize deploy/base > "$rendered"
+              deployed=$(oc create --dry-run=client --validate=false -f "$rendered" -o jsonpath='{..image}')
+              if [ "$deployed" != "$BUILD_IMAGE" ]; then
+                printf 'Deployment image mismatch: %s\nExpected: %s\nFix deploy/base/deployment.yaml, commit and push before rebuilding.\n' "$deployed" "$BUILD_IMAGE" >&2
+                exit 1
+              fi
+              printf 'Deployment and build image match: %s\n' "$BUILD_IMAGE"
+    - name: build
+      runAfter: [validate-image]
       taskRef:
         resolver: cluster
         params:
