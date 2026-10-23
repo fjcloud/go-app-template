@@ -40,6 +40,13 @@ credentials, tokens or other kubeconfigs. Browser SSO alone does not log in oc.
 
 Image: `image-registry.openshift-image-registry.svc:5000/${APP_NAME}-build/${APP_NAME}:latest`
 
+The Deployment already has this exact image and `imagePullPolicy: Always`.
+Keep it: never use `placeholder`, a bare app name, Docker Hub or an invented tag.
+Before the first commit, verify the Deployment image matches IMAGE. For an older
+checkout containing `image: placeholder`, replace that value with IMAGE, then
+commit and push BEFORE starting Tekton. The pipeline checks the rendered deployment
+against its image parameter before buildah; do not bypass this validation.
+
 Create namespaces `${APP_NAME}-build` and `${APP_NAME}-dev`. Never use namespace `default` for the app, Argo CD, or the Application.
 
 1. If `git config user.email` is empty: `git config user.email "dev@workshop.local"` and `git config user.name "developer"`. Then `gitpop init --host "$GIT_SERVER" --name "$APP_NAME"`, run `git branch -M main` for the personal repository, commit, push `main`.
@@ -70,9 +77,12 @@ spec:
 EOF
 ```
 
-Wait Succeeded.
+Wait Succeeded. If validate-image fails, fix the image in Git, commit/push and rerun.
+Before creating the Argo CD Application, also verify the pushed tag exists:
+`oc get imagestreamtag "${APP_NAME}:latest" -n "${APP_NAME}-build" -o name`.
+Never start Argo CD delivery before the build and this registry check succeed.
 
-3. In `${APP_NAME}-build`: `oc policy add-role-to-user system:image-puller system:serviceaccount:${APP_NAME}-dev:default -n ${APP_NAME}-build` (namespaced Role `system:image-puller` — there is no ClusterRole named `image-puller`). Then in `${APP_NAME}-dev`: set Deployment `image:`, push. `oc apply -k gitops/base -n ${APP_NAME}-dev`. Create the Argo CD Application **in ${APP_NAME}-dev** (destination namespace `${APP_NAME}-dev`, repo origin, path `deploy/base`, auto-sync). Wait Healthy. Print app + `argocd-server` Route URLs.
+3. In `${APP_NAME}-build`: `oc policy add-role-to-user system:image-puller system:serviceaccount:${APP_NAME}-dev:default -n ${APP_NAME}-build` (namespaced Role `system:image-puller` — there is no ClusterRole named `image-puller`). The Deployment image is already correct; verify it before pushing any manifest change. Then in `${APP_NAME}-dev`: `oc apply -k gitops/base -n ${APP_NAME}-dev`. Create the Argo CD Application **in ${APP_NAME}-dev** (destination namespace `${APP_NAME}-dev`, repo origin, path `deploy/base`, auto-sync). Wait for the matching Git revision to be Synced / Healthy and the Deployment rollout to finish. Verify its running image equals IMAGE. Only then print app + `argocd-server` Route URLs.
 
 Later change: local build, git push, new PipelineRun (same `oc create -f -`), `oc rollout restart deployment/$APP_NAME -n ${APP_NAME}-dev`.
 

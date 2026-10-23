@@ -35,3 +35,12 @@ Developers launch this template in OpenShift Dev Spaces. **OpenCode** is injecte
 Full workshop instructions: https://fjcloud.github.io/rosa-ai-app-platform/
 
 The model is used for coding; Fortune Cookie serves local strings without runtime inference. The template pushes source to an external ephemeral Git service. Export work before the RHDP assignment expires. For ARO Live Transcript, use the [`aro-transcription` branch](https://github.com/fjcloud/go-app-template/tree/aro-transcription) and the ARO guide.
+
+The Deployment already points to the internal image built by Tekton and uses `imagePullPolicy: Always`. The pipeline runs `clone → validate-image → build`: a placeholder, wrong namespace or mismatched deployment image stops the build with an explicit error. For older personal checkouts, fix the image in Git before rebuilding; Argo CD reads the committed manifest.
+
+Template regression checks:
+
+```sh
+python3 -m pip install -r tests/requirements.txt
+python3 -m unittest discover -s tests
+```
