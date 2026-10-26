@@ -44,10 +44,11 @@ spec:
             type: string
         workspaces:
           - name: source
+            mountPath: /source
         steps:
           - name: check-deployment-image
             image: registry.redhat.io/openshift4/ose-cli-rhel9:v4.21
-            workingDir: $(workspaces.source.path)
+            workingDir: /
             env:
               - name: HOME
                 value: /tmp
@@ -64,6 +65,7 @@ spec:
             script: |
               #!/bin/sh
               set -eu
+              cd "$(workspaces.source.path)"
               case "$BUILD_NAMESPACE" in
                 *-build) ;;
                 *) echo "Run this pipeline in the app's <app-name>-build namespace." >&2; exit 1 ;;
