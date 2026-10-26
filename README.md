@@ -2,7 +2,7 @@
 
 Use the `aro-transcription` branch for the [ARO workshop](https://fjcloud.github.io/aro-ai-app-platform/modules/index.html). The `main` branch remains the ROSA Fortune Cookie template.
 
-OpenCode runs in Dev Spaces and uses **DeepSeek-V4 Pro on Foundry** to write the Go app. **RedHatAI Whisper Large v3 Turbo INT8**, served through OpenShift AI and Red Hat AI Inference on one T4, transcribes the app’s audio. These are separate model paths.
+OpenCode runs in Dev Spaces and uses **DeepSeek-V4 Pro on Foundry through OpenShift AI MaaS** to write the Go app. **RedHatAI Whisper Large v3 Turbo INT8**, served through OpenShift AI and Red Hat AI Inference on one T4, transcribes the app’s audio. These are separate model paths.
 
 The browser captures short WAV clips and sends them to the Go backend, which calls the internal Whisper service. Results appear after each clip; this is near-real-time transcription.
 
@@ -10,7 +10,7 @@ The browser captures short WAV clips and sends them to the Go backend, which cal
 | --- | --- |
 | `AGENTS.md` | Generation instructions, delivery steps and the speech API contract |
 | `devfile.yaml` | Browser workspace and ephemeral Git client |
-| `opencode.json` | Project model configuration; Lab 2.1 replaces the inherited pin with the platform’s Foundry configuration |
+| `opencode.json` | DeepSeek via MaaS; the gateway URL and MaaS key come from workspace environment variables |
 | `deploy/base/` | Go application Deployment, Service and HTTPS Route |
 | `pipeline/base/` | Tekton image build |
 | `gitops/base/` | Developer-owned Argo CD instance |

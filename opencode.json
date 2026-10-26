@@ -1,9 +1,9 @@
 {
   "$schema": "https://opencode.ai/config.json",
   "provider": {
-    "qwen3": {
+    "deepseek": {
       "npm": "@ai-sdk/openai-compatible",
-      "name": "Qwen3.8",
+      "name": "DeepSeek-V4 Pro",
       "options": {
         "baseURL": "{env:OPENAI_BASE_URL}",
         "apiKey": "{env:OPENAI_API_KEY}",
@@ -11,16 +11,16 @@
         "timeout": 600000
       },
       "models": {
-        "qwen3": {
-          "name": "Qwen3.8",
+        "deepseekv4pro": {
+          "name": "DeepSeek-V4 Pro",
           "limit": {
-            "context": 262144,
+            "context": 131072,
             "output": 32768
           }
         }
       }
     }
   },
-  "model": "qwen3/qwen3",
+  "model": "deepseek/deepseekv4pro",
   "autoupdate": false
 }

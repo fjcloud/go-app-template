@@ -92,7 +92,8 @@ Deployment: requests 50m/64Mi, limits 200m/128Mi, probes `/healthz:8080`, `runAs
 
 ## Speech application contract
 
-The coding LLM is DeepSeek on Foundry. Whisper is a separate OpenShift AI service
+The coding LLM is DeepSeek on Foundry, accessed through OpenShift AI MaaS.
+Use the injected MaaS base URL and Bearer key; never look up or forward Azure keys. Whisper is a separate OpenShift AI service
 used by the application, not by OpenCode. Build a Go browser microphone app.
 Embed all HTML/JS/CSS using go:embed: the Dockerfile ships only the binary.
 Serve only embedded assets; never serve the project directory or .git files.
