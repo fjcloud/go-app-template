@@ -44,3 +44,5 @@ Template regression checks:
 python3 -m pip install -r tests/requirements.txt
 python3 -m unittest discover -s tests
 ```
+
+The facilitator prepares the two app namespaces and a scoped developer identity before Dev Spaces starts. Follow `AGENTS.md` with that identity; the application uses `restricted-v2`, and builds use Linux user namespaces without privileged SCC grants.
