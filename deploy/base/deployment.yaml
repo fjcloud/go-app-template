@@ -11,6 +11,8 @@ spec:
       app.kubernetes.io/name: live-transcript
   template:
     metadata:
+      annotations:
+        openshift.io/required-scc: restricted-v2
       labels:
         app.kubernetes.io/name: live-transcript
     spec:

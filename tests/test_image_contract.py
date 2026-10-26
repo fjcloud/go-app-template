@@ -42,7 +42,7 @@ class ImageContract(unittest.TestCase):
                         RENDERED_IMAGE=IMAGE, OC_CALLS=str(self.calls))
 
     def run_guard(self):
-        return subprocess.run(['sh'], input=SCRIPT, text=True, capture_output=True,
+        return subprocess.run(['sh'], input=SCRIPT.replace('$(workspaces.source.path)', str(self.directory)), text=True, capture_output=True,
                               env=self.env, cwd=self.directory, timeout=10)
 
     def test_template_and_default_build_image_are_identical(self):
