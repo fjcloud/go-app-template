@@ -15,7 +15,7 @@ The browser captures short WAV clips and sends them to the Go backend, which cal
 | `pipeline/base/` | Tekton image build |
 | `gitops/base/` | Developer-owned Argo CD instance |
 
-Follow the workshop to prepare the platform, authenticate `oc` inside the workspace and copy the platform model configuration. Then plan, generate, build and deploy with OpenCode. Verify the matching Git revision in Argo CD and test the microphone in the HTTPS app. The model key stays in workspace environment variables; speech audio goes to Whisper through the backend.
+Follow the workshop to set up the platform, the scoped workspace identity and the model configuration. Then plan, generate, build and deploy with OpenCode. Verify the matching Git revision in Argo CD and test the microphone in the HTTPS app. The model key stays in workspace environment variables; speech audio goes to Whisper through the backend.
 
 The Dockerfile ships only the Go binary, so embed all web assets. The [tested reference app](https://github.com/fjcloud/aro-ai-app-platform/tree/main/examples/live-transcript) provides the capture and proxy baseline. The exercise adds a Copy transcript button.
 
