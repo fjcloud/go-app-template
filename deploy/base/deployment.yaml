@@ -16,6 +16,7 @@ spec:
       labels:
         app.kubernetes.io/name: live-transcript
     spec:
+      serviceAccountName: cluster-voice
       securityContext:
         runAsNonRoot: true
         seccompProfile:
@@ -24,9 +25,25 @@ spec:
         - name: live-transcript
           image: image-registry.openshift-image-registry.svc:5000/live-transcript-build/live-transcript:latest
           imagePullPolicy: Always
+          envFrom:
+            - configMapRef:
+                name: cluster-voice-config
           env:
+            - name: LISTEN_ADDR
+              value: 127.0.0.1:8080
+            - name: AGENT_KEY_FILE
+              value: /etc/agent/OPENAI_API_KEY
+            - name: SERVICE_CA_FILE
+              value: /etc/service-ca/service-ca.crt
             - name: WHISPER_URL
               value: http://whisper-predictor.speech-serving.svc.cluster.local/v1
+          volumeMounts:
+            - name: runtime-model
+              mountPath: /etc/agent
+              readOnly: true
+            - name: service-ca
+              mountPath: /etc/service-ca
+              readOnly: true
           ports:
             - containerPort: 8080
           resources:
@@ -34,18 +51,20 @@ spec:
               cpu: 50m
               memory: 64Mi
             limits:
-              cpu: 200m
-              memory: 128Mi
+              cpu: 500m
+              memory: 256Mi
           livenessProbe:
             httpGet:
               path: /healthz
-              port: 8080
+              port: 8443
+              scheme: HTTPS
             initialDelaySeconds: 5
             periodSeconds: 10
           readinessProbe:
             httpGet:
               path: /healthz
-              port: 8080
+              port: 8443
+              scheme: HTTPS
             initialDelaySeconds: 3
             periodSeconds: 5
           securityContext:
@@ -53,3 +72,59 @@ spec:
             runAsNonRoot: true
             capabilities:
               drop: ["ALL"]
+        - name: oauth-proxy
+          image: image-registry.openshift-image-registry.svc:5000/live-transcript-dev/cluster-voice-oauth:current
+          imagePullPolicy: Always
+          args:
+            - --provider=openshift
+            - --https-address=:8443
+            - --http-address=
+            - --upstream=http://127.0.0.1:8080
+            - --openshift-service-account=cluster-voice
+            - '--openshift-sar={"namespace":"live-transcript-dev","resource":"services","resourceName":"live-transcript","verb":"get"}'
+            - '--openshift-delegate-urls={"/":{"namespace":"live-transcript-dev","resource":"services","name":"live-transcript","verb":"get"}}'
+            - --tls-cert=/etc/tls/tls.crt
+            - --tls-key=/etc/tls/tls.key
+            - --cookie-secret-file=/etc/oauth/cookie-secret
+            - --cookie-samesite=lax
+            - --cookie-expire=8h
+            - --skip-auth-regex=^/healthz$
+            - --pass-access-token=false
+            - --pass-user-bearer-token=false
+            - --pass-basic-auth=false
+            - --request-logging=false
+          ports:
+            - name: oauth
+              containerPort: 8443
+          volumeMounts:
+            - name: serving-cert
+              mountPath: /etc/tls
+              readOnly: true
+            - name: oauth-cookie
+              mountPath: /etc/oauth
+              readOnly: true
+          resources:
+            requests:
+              cpu: 10m
+              memory: 32Mi
+            limits:
+              cpu: 200m
+              memory: 128Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            runAsNonRoot: true
+            capabilities:
+              drop: ["ALL"]
+      volumes:
+        - name: runtime-model
+          secret:
+            secretName: cluster-voice-model
+        - name: service-ca
+          configMap:
+            name: cluster-voice-service-ca
+        - name: serving-cert
+          secret:
+            secretName: cluster-voice-tls
+        - name: oauth-cookie
+          secret:
+            secretName: cluster-voice-oauth

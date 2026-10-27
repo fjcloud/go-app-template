@@ -6,8 +6,8 @@ No Ansible. No `scripts/`. Do not rewrite `deploy/`, `pipeline/`, `gitops/`, `de
 
 ## Generate
 
-`main.go` — HTTP `:8080`, `GET /`, `GET /healthz` → `{"status":"ok"}`
-`go.mod` — `module <app-name>` / `go 1.22`
+`main.go` — HTTP on `$LISTEN_ADDR` (default `:8080`, `127.0.0.1:8080` behind the prepared OAuth proxy), `GET /`, `GET /healthz` → `{"status":"ok"}`
+`go.mod` — `module <app-name>` / `go 1.24.0` (MCP SDK requires Go 1.24)
 
 Dockerfile (exact; go-toolset cannot write to `/app`):
 
@@ -102,11 +102,33 @@ Later change: local build, git push, new PipelineRun (same `oc create -f -`), `o
 
 ## OpenShift
 
-Deployment: requests 50m/64Mi, limits 200m/128Mi, probes `/healthz:8080`, `runAsNonRoot` + drop ALL, no `runAsUser`, no Route `spec.host`, TLS edge + Redirect.
+Deployment: app requests 50m/64Mi, limits 500m/256Mi, HTTPS probes `/healthz:8443` through the OAuth proxy, `runAsNonRoot` + drop ALL, no `runAsUser`, no Route `spec.host`, TLS reencrypt + Redirect. Keep the OAuth proxy, loopback app listener, mounted runtime Secrets, service CA and cluster-voice ServiceAccount intact. The platform supplies these; never grant monitoring permissions yourself.
 
-## Speech application contract
+## Cluster Voice application contract
 
-The coding LLM is DeepSeek on Foundry, accessed through OpenShift AI MaaS.
+Keep the technical app name `live-transcript` and existing Git/Tekton/Argo CD path.
+This is one application: speech transcription plus a runtime cluster-health agent.
+Copy ALL Go files, go.mod, go.sum, Dockerfile and web assets from the tested reference
+linked below as the baseline. Preserve its tool validation, timeout and trace behavior;
+do not regenerate the monitoring connector or agent loop from a prose description.
+Read the reference README for configuration and tests.
+
+The browser transcribes clips, lets the user check/edit the question, then explicitly
+submits it to POST /api/chat. Include text entry and bounded conversation history.
+Use the server-side runtime MaaS key file AGENT_KEY_FILE (separate from coding
+OPENAI_API_KEY). Read it for every request. Never put model or service account
+credentials in the browser. The agent uses DeepSeek tool calling with the bounded
+list_metrics, cluster_health and query_metric tools. Only catalog PromQL executes;
+no arbitrary queries, URLs, shell, Kubernetes mutation, remediation or SCC changes.
+Evidence must show metric ID, unit, exact PromQL, sample/query timestamps and errors.
+Missing or stale data is unknown, never healthy/zero. /mcp exposes the same read-only
+tools over Streamable HTTP for the OpenShift AI Playground. Keep standard MCP SDK
+and OpenTelemetry/MLflow instrumentation, including model/tool latency and trace ID.
+Do not log audio, prompts, answers, model results or credentials in traces.
+
+## Speech capture contract
+
+Both coding and runtime use DeepSeek on Foundry through OpenShift AI MaaS, with separate keys and quotas.
 Use the injected MaaS base URL and Bearer key; never look up or forward Azure keys. Whisper is a separate OpenShift AI service
 used by the application, not by OpenCode. Build a Go browser microphone app.
 Embed all HTML/JS/CSS using go:embed: the Dockerfile ships only the binary.

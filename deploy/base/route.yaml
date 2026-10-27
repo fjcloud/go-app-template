@@ -3,7 +3,7 @@ kind: Route
 metadata:
   name: live-transcript
   annotations:
-    haproxy.router.openshift.io/timeout: 60s
+    haproxy.router.openshift.io/timeout: 120s
   labels:
     app.kubernetes.io/name: live-transcript
 spec:
@@ -11,7 +11,7 @@ spec:
     kind: Service
     name: live-transcript
   port:
-    targetPort: http
+    targetPort: https
   tls:
-    termination: edge
+    termination: reencrypt
     insecureEdgeTerminationPolicy: Redirect
