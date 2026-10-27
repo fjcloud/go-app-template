@@ -108,23 +108,28 @@ Later change: local build, git push, new PipelineRun (same `oc create -f -`), `o
 
 Deployment: app requests 50m/64Mi, limits 500m/256Mi, HTTPS probes `/healthz:8443` through the OAuth proxy, `runAsNonRoot` + drop ALL, no `runAsUser`, no Route `spec.host`, TLS reencrypt + Redirect. Keep the OAuth proxy, loopback app listener, service CA mounts, service CA and decision-tetris ServiceAccount intact. The platform supplies these; never grant monitoring permissions yourself.
 
-## Decision Tetris application contract
+## Orbit Checkpoint application contract
 
-This application is now Decision Tetris. Keep the technical live-transcript name,
-Git/Tekton/Argo CD image contract and OAuth sidecar. Preserve the tested Go engine,
-seven-bag seeded pieces, legal straight-drop placements and server-owned board.
-The browser never supplies a board. d3-mini chooses from an exact legal option set
-through the internal DECISION_URL System One endpoint, running on one local T4.
-Do not add hosted inference, an API key, Whisper or generated action parsing.
-The model returns choice probabilities and confidence, not prose. Reject invalid,
-incomplete or failed inference; never silently use the heuristic as a fallback.
-The heuristic and manual modes are explicit comparison modes. Keep per-turn
-MLflow traces and local metrics, bounded sessions, same-origin checks and graceful
-cancellation. Never grant SCCs or cluster permissions to the app.
+This application is Orbit Checkpoint, a 12-courier document-inspection game.
+Keep the technical live-transcript name, existing OAuth sidecar, decision-tetris
+ServiceAccount/config names and Git/Tekton/Argo CD image contract.
+The server renders a passport/permit PNG and owns the hidden answer key, seeded
+case deck, ordered rules, changing directives and score. Send only that exact image
+and the public rulebook/directive to the local d3-mini System One endpoint.
+Never send extracted document fields, expected verdicts or server-only case objects
+to the model or browser before the player stamps a decision.
 
-Copy all Go files, go.mod, go.sum, Dockerfile and embedded web assets from this
-reference before editing the game. Preserve its model protocol and engine checks:
-https://github.com/fjcloud/aro-ai-app-platform/tree/feature/decision-tetris/examples/decision-tetris
+The player chooses clear, inspect or reject; the model independently chooses from
+those three options. Show the model's actual mistakes, probabilities and the game
+engine's rule explanation. Never invent an AI explanation or silently correct its
+choice. Observer mode runs the same model path without awarding human points.
+Failed or cancelled inference must leave the round unresolved, without fallback.
+Preserve bounded sessions, same-origin checks, stale/duplicate rejection, document
+zoom on mobile and MLflow inspection/decision spans. No hosted inference, runtime
+model key, monitoring permissions, SCC grants or extra GPU.
+
+Copy all Go files, go.mod, go.sum, Dockerfile and web/ from the tested reference:
+https://github.com/fjcloud/aro-ai-app-platform/tree/feature/orbit-checkpoint/examples/orbit-checkpoint
 
 The coding model remains DeepSeek through the prepared MaaS endpoint. The running
 game uses local d3-mini; never reuse the coding API key for runtime inference.

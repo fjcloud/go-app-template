@@ -33,7 +33,7 @@ class SecurityContract(unittest.TestCase):
         self.assertNotIn('privileged: true', agents)
         self.assertNotIn('oc create namespace', agents)
 
-class DecisionTetrisContract(unittest.TestCase):
+class LocalDecisionGameContract(unittest.TestCase):
     def test_only_oauth_proxy_exposes_the_app(self):
         spec = yaml.safe_load((ROOT/'deploy/base/deployment.yaml').read_text())['spec']['template']['spec']
         self.assertEqual(spec['serviceAccountName'], 'decision-tetris')

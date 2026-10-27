@@ -1,29 +1,33 @@
-# Go App Template — ARO Decision Tetris experiment
+# Go App Template — ARO Orbit Checkpoint experiment
 
-This branch prepares the existing `live-transcript` scaffold for **Decision Tetris**:
-Go game engine → legal placements → local d3-mini on one NVIDIA T4 → typed decision
-and probabilities. The browser shows the game, single steps, autoplay, a manual
-player and a clearly labelled heuristic baseline.
+Inspect passport and cargo-permit images, apply the current shift directive and
+stamp **Clear**, **Inspect** or **Reject** before local d3-mini reveals its choice.
+Play a 12-courier shift against the AI, or watch it run the checkpoint.
+
+The Go server owns documents, rules and scoring. Both players see the same image;
+the model never receives extracted fields or the answer key. Its mistakes remain
+visible. A failed model call leaves the courier waiting, without a fallback verdict.
 
 The coding assistant still uses DeepSeek through OpenShift AI MaaS. Game inference
-uses the internal System One endpoint, without a hosted model or runtime API key.
-The technical app name, Tekton image guard, personal Git repository, Argo CD and
-OpenShift OAuth flow remain the same. The runtime ServiceAccount has image-pull,
-OAuth delegation and namespace-scoped MLflow access; it needs no monitoring access.
+uses the existing T4 and internal System One endpoint. Keep the technical
+`live-transcript` app name, existing `decision-tetris` runtime identity/config,
+OpenShift OAuth and personal Git → Tekton → Argo CD delivery path.
 
-The facilitator first runs `scripts/prepare-decision-tetris.py` from the matching
-[workshop branch](https://github.com/fjcloud/aro-ai-app-platform/tree/feature/decision-tetris).
-It installs an experimental custom OpenShift AI runtime on the single T4. This is
-a community model/runtime combination with FP16 numerics, not a Red Hat-validated
-model. Whisper is stopped to free the GPU; its model/cache remain available.
+From the matching [workshop branch](https://github.com/fjcloud/aro-ai-app-platform/tree/feature/orbit-checkpoint),
+the facilitator prepares the local runtime and native MLflow experiment:
 
-Copy the complete [tested Go reference](https://github.com/fjcloud/aro-ai-app-platform/tree/feature/decision-tetris/examples/decision-tetris),
-then follow `AGENTS.md` to commit, push, build with Tekton and verify Argo Synced/Healthy
-at the matching revision. Inspect `decision-tetris` traces in native MLflow.
+```sh
+python3 scripts/prepare-decision-tetris.py --reuse-runtime --game orbit-checkpoint
+```
 
-The published `aro-transcription` branch remains Cluster Voice during this experiment;
-ROSA `main` remains unchanged. This template uses fixed namespaces and an ephemeral
-Git service: use one assigned cluster per participant and export code before expiry.
+Omit `--reuse-runtime` when the custom runtime image has not been built yet.
+Copy the complete [Go reference](https://github.com/fjcloud/aro-ai-app-platform/tree/feature/orbit-checkpoint/examples/orbit-checkpoint),
+then follow `AGENTS.md` to build and ship. Inspect `orbit-checkpoint` traces in
+native MLflow. The community runtime uses FP16 on T4; this is an experiment,
+not a Red Hat validated model/runtime combination.
+
+The stable `aro-transcription` guide and ROSA `main` remain unchanged. The earlier
+Tetris prototype remains on `feature/decision-tetris`.
 
 ```sh
 python3 -m pip install -r tests/requirements.txt
