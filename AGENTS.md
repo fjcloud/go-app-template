@@ -45,6 +45,10 @@ Image: `image-registry.openshift-image-registry.svc:5000/${APP_NAME}-build/${APP
 
 The Deployment already has this exact image and `imagePullPolicy: Always`.
 Keep it: never use `placeholder`, a bare app name, Docker Hub or an invented tag.
+Before every build, check `git status --porcelain`. Commit all authorized workshop
+application changes, including facilitator-prepared changes already in the working tree,
+and push them. The working tree must be clean before Tekton starts. Never claim delivery
+for a locally tested source state that differs from the pushed commit.
 Before the first commit, verify the Deployment image matches IMAGE. For an older
 checkout containing `image: placeholder`, replace that value with IMAGE, then
 commit and push BEFORE starting Tekton. The pipeline checks the rendered deployment
