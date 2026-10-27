@@ -16,7 +16,7 @@ spec:
       labels:
         app.kubernetes.io/name: live-transcript
     spec:
-      serviceAccountName: cluster-voice
+      serviceAccountName: decision-tetris
       securityContext:
         runAsNonRoot: true
         seccompProfile:
@@ -27,20 +27,13 @@ spec:
           imagePullPolicy: Always
           envFrom:
             - configMapRef:
-                name: cluster-voice-config
+                name: decision-tetris-config
           env:
             - name: LISTEN_ADDR
               value: 127.0.0.1:8080
-            - name: AGENT_KEY_FILE
-              value: /etc/agent/OPENAI_API_KEY
             - name: SERVICE_CA_FILE
               value: /etc/service-ca/service-ca.crt
-            - name: WHISPER_URL
-              value: http://whisper-predictor.speech-serving.svc.cluster.local/v1
           volumeMounts:
-            - name: runtime-model
-              mountPath: /etc/agent
-              readOnly: true
             - name: service-ca
               mountPath: /etc/service-ca
               readOnly: true
@@ -80,7 +73,7 @@ spec:
             - --https-address=:8443
             - --http-address=
             - --upstream=http://127.0.0.1:8080
-            - --openshift-service-account=cluster-voice
+            - --openshift-service-account=decision-tetris
             - '--openshift-sar={"namespace":"live-transcript-dev","resource":"services","resourceName":"live-transcript","verb":"get"}'
             - '--openshift-delegate-urls={"/":{"namespace":"live-transcript-dev","resource":"services","name":"live-transcript","verb":"get"}}'
             - --tls-cert=/etc/tls/tls.crt
@@ -116,9 +109,6 @@ spec:
             capabilities:
               drop: ["ALL"]
       volumes:
-        - name: runtime-model
-          secret:
-            secretName: cluster-voice-model
         - name: service-ca
           configMap:
             name: cluster-voice-service-ca

@@ -1,7 +1,7 @@
 schemaVersion: 2.2.2
 metadata:
   name: live-transcript-workspace
-  description: 'Cluster Voice: Whisper, a read-only health agent, MCP tools and MLflow traces'
+  description: 'Decision Tetris: local d3-mini on one T4, Go game engine and MLflow traces'
 attributes:
   controller.devfile.io/storage-type: per-user
 components:

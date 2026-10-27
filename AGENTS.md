@@ -7,7 +7,7 @@ No Ansible. No `scripts/`. Do not rewrite `deploy/`, `pipeline/`, `gitops/`, `de
 ## Generate
 
 `main.go` — HTTP on `$LISTEN_ADDR` (default `:8080`, `127.0.0.1:8080` behind the prepared OAuth proxy), `GET /`, `GET /healthz` → `{"status":"ok"}`
-`go.mod` — `module <app-name>` / `go 1.24.0` (MCP SDK requires Go 1.24)
+`go.mod` — `module <app-name>` / `go 1.24.0`
 
 Dockerfile (exact; go-toolset cannot write to `/app`):
 
@@ -106,57 +106,31 @@ Later change: local build, git push, new PipelineRun (same `oc create -f -`), `o
 
 ## OpenShift
 
-Deployment: app requests 50m/64Mi, limits 500m/256Mi, HTTPS probes `/healthz:8443` through the OAuth proxy, `runAsNonRoot` + drop ALL, no `runAsUser`, no Route `spec.host`, TLS reencrypt + Redirect. Keep the OAuth proxy, loopback app listener, mounted runtime Secrets, service CA and cluster-voice ServiceAccount intact. The platform supplies these; never grant monitoring permissions yourself.
+Deployment: app requests 50m/64Mi, limits 500m/256Mi, HTTPS probes `/healthz:8443` through the OAuth proxy, `runAsNonRoot` + drop ALL, no `runAsUser`, no Route `spec.host`, TLS reencrypt + Redirect. Keep the OAuth proxy, loopback app listener, service CA mounts, service CA and decision-tetris ServiceAccount intact. The platform supplies these; never grant monitoring permissions yourself.
 
-## Cluster Voice application contract
+## Decision Tetris application contract
 
-Keep the technical app name `live-transcript` and existing Git/Tekton/Argo CD path.
-This is one application: speech transcription plus a runtime cluster-health agent.
-Copy ALL Go files, go.mod, go.sum, Dockerfile and web assets from the tested reference
-linked below as the baseline. Preserve its tool validation, timeout and trace behavior;
-do not regenerate the monitoring connector or agent loop from a prose description.
-Read the reference README for configuration and tests.
+This application is now Decision Tetris. Keep the technical live-transcript name,
+Git/Tekton/Argo CD image contract and OAuth sidecar. Preserve the tested Go engine,
+seven-bag seeded pieces, legal straight-drop placements and server-owned board.
+The browser never supplies a board. d3-mini chooses from an exact legal option set
+through the internal DECISION_URL System One endpoint, running on one local T4.
+Do not add hosted inference, an API key, Whisper or generated action parsing.
+The model returns choice probabilities and confidence, not prose. Reject invalid,
+incomplete or failed inference; never silently use the heuristic as a fallback.
+The heuristic and manual modes are explicit comparison modes. Keep per-turn
+MLflow traces and local metrics, bounded sessions, same-origin checks and graceful
+cancellation. Never grant SCCs or cluster permissions to the app.
 
-The browser transcribes clips, lets the user check/edit the question, then explicitly
-submits it to POST /api/chat. Include text entry and bounded conversation history.
-Use the server-side runtime MaaS key file AGENT_KEY_FILE (separate from coding
-OPENAI_API_KEY). Read it for every request. Never put model or service account
-credentials in the browser. The agent uses DeepSeek tool calling with the bounded
-list_metrics, cluster_health and query_metric tools. Only catalog PromQL executes;
-no arbitrary queries, URLs, shell, Kubernetes mutation, remediation or SCC changes.
-Evidence must show metric ID, unit, exact PromQL, sample/query timestamps and errors.
-Missing or stale data is unknown, never healthy/zero. /mcp exposes the same read-only
-tools over Streamable HTTP for the OpenShift AI Playground. Keep standard MCP SDK
-and OpenTelemetry/MLflow instrumentation, including model/tool latency and trace ID.
-Do not log audio, prompts, answers, model results or credentials in traces.
+Copy all Go files, go.mod, go.sum, Dockerfile and embedded web assets from this
+reference before editing the game. Preserve its model protocol and engine checks:
+https://github.com/fjcloud/aro-ai-app-platform/tree/feature/decision-tetris/examples/decision-tetris
 
-## Speech capture contract
+The coding model remains DeepSeek through the prepared MaaS endpoint. The running
+game uses local d3-mini; never reuse the coding API key for runtime inference.
 
-Both coding and runtime use DeepSeek on Foundry through OpenShift AI MaaS, with separate keys and quotas.
-Use the injected MaaS base URL and Bearer key; never look up or forward Azure keys. Whisper is a separate OpenShift AI service
-used by the application, not by OpenCode. Build a Go browser microphone app.
-Embed all HTML/JS/CSS using go:embed: the Dockerfile ships only the binary.
-Serve only embedded assets; never serve the project directory or .git files.
-Use Web Audio + AudioWorklet to produce independent mono 16 kHz PCM16 WAV clips
-(1–4 seconds), POST them sequentially to the Go backend, display returned text.
-Do not use the browser SpeechRecognition API or send microphone audio to Foundry.
-Keep audio only in memory, skip silence, bound queued clips, flush on Stop, stop
-all microphone tracks on Stop/error/page exit, show permission/network errors.
-Use textContent for transcripts, never innerHTML. Scripts must be external files
-so a restrictive Content-Security-Policy works. No external JS dependencies.
-
-Backend POST /api/transcribe accepts multipart field file (WAV) and language (fr/en/empty), limits
-upload size and concurrency, validates mono PCM16 16 kHz WAV duration <=10 seconds,
-forwards multipart model=whisper and response_format=json to
-WHISPER_URL/audio/transcriptions. Default WHISPER_URL is
-http://whisper-predictor.speech-serving.svc.cluster.local/v1 .
-Automatic detection means omitting the upstream language field, not language=auto.
-Use request deadlines, never log audio or credentials, return useful generic errors.
-The browser only calls its own Go origin. No CORS, public model Route or model key
-in browser code. Transcription is near-real-time via short clips, not native Whisper
-WebSocket streaming. French is the default language; offer English and automatic.
-
-A tested reference is available in the ARO workshop repository at
-examples/live-transcript:
-https://github.com/fjcloud/aro-ai-app-platform/tree/main/examples/live-transcript
-Reuse this tested capture/proxy implementation as the baseline for the app.
+If GitPop authentication is missing after a workspace restart, restore its existing
+wallet with gitpop auth setup --host "$GIT_SERVER" --keyfile .git/gitpop/wallet.json
+--repo-url "$(git remote get-url origin)". Do not generate another wallet for an
+existing personal repository. Keep its credential helper in this repo's local Git
+configuration so workspace restarts retain it.

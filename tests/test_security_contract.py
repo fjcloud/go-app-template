@@ -33,10 +33,10 @@ class SecurityContract(unittest.TestCase):
         self.assertNotIn('privileged: true', agents)
         self.assertNotIn('oc create namespace', agents)
 
-class ClusterVoiceContract(unittest.TestCase):
+class DecisionTetrisContract(unittest.TestCase):
     def test_only_oauth_proxy_exposes_the_app(self):
         spec = yaml.safe_load((ROOT/'deploy/base/deployment.yaml').read_text())['spec']['template']['spec']
-        self.assertEqual(spec['serviceAccountName'], 'cluster-voice')
+        self.assertEqual(spec['serviceAccountName'], 'decision-tetris')
         app, proxy = spec['containers']
         self.assertIn({'name':'LISTEN_ADDR','value':'127.0.0.1:8080'}, app['env'])
         self.assertIn('--pass-user-bearer-token=false', proxy['args'])
@@ -47,11 +47,10 @@ class ClusterVoiceContract(unittest.TestCase):
         self.assertEqual(route['spec']['tls']['termination'], 'reencrypt')
         self.assertEqual(route['metadata']['annotations']['haproxy.router.openshift.io/timeout'], '120s')
 
-    def test_runtime_key_is_mounted_and_never_a_literal(self):
+    def test_local_model_needs_no_runtime_api_key(self):
         spec = yaml.safe_load((ROOT/'deploy/base/deployment.yaml').read_text())['spec']['template']['spec']
-        volume = next(v for v in spec['volumes'] if v['name']=='runtime-model')
-        self.assertEqual(volume['secret']['secretName'], 'cluster-voice-model')
+        self.assertNotIn('runtime-model', {v['name'] for v in spec['volumes']})
         app = spec['containers'][0]
+        self.assertEqual(app['envFrom'], [{'configMapRef': {'name': 'decision-tetris-config'}}])
         self.assertNotIn('OPENAI_API_KEY', {e['name'] for e in app['env']})
-        self.assertTrue(next(v for v in app['volumeMounts'] if v['name']=='runtime-model')['readOnly'])
         self.assertTrue(all(p['httpGet']['scheme']=='HTTPS' and p['httpGet']['port']==8443 for n,p in app.items() if n.endswith('Probe')))
