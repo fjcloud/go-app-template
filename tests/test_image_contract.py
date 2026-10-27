@@ -65,7 +65,7 @@ class ImageContract(unittest.TestCase):
         calls = [json.loads(line) for line in self.calls.read_text().splitlines()]
         self.assertEqual(calls[0], ['kustomize', 'deploy/base'])
         self.assertIn('--dry-run=client', calls[1])
-        self.assertIn('jsonpath={..image}', calls[1])
+        self.assertIn("jsonpath={..containers[?(@.name=='test-app')].image}", calls[1])
 
     def test_placeholder_build_parameter_stops_before_any_cli_call(self):
         self.env['BUILD_IMAGE'] = 'placeholder'

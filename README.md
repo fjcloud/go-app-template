@@ -1,29 +1,26 @@
-# Go App Template — ARO Live Transcript
+# Go App Template — ARO Cluster Voice
 
-Use the `aro-transcription` branch for the [ARO workshop](https://fjcloud.github.io/aro-ai-app-platform/modules/index.html). The `main` branch remains the ROSA Fortune Cookie template.
+Use the `aro-transcription` branch for the [ARO workshop](https://fjcloud.github.io/aro-ai-app-platform/modules/index.html). The technical application name remains `live-transcript`; the `main` branch remains the ROSA Fortune Cookie template.
 
-OpenCode runs in Dev Spaces and uses **DeepSeek-V4 Pro on Foundry through OpenShift AI MaaS** to write the Go app. **RedHatAI Whisper Large v3 Turbo INT8**, served through OpenShift AI and Red Hat AI Inference on one T4, transcribes the app’s audio. These are separate model paths.
+Speak to your OpenShift cluster: **Whisper on one T4 → editable question → DeepSeek through MaaS → read-only metrics tools → answer with evidence**. Text questions also work. The same connector exposes MCP tools for the OpenShift AI Playground, and OpenTelemetry exports model/tool traces to MLflow.
 
-The browser captures short WAV clips and sends them to the Go backend, which calls the internal Whisper service. Results appear after each clip; this is near-real-time transcription.
+OpenCode uses a coding MaaS key to adapt the [reference implementation](https://github.com/fjcloud/aro-ai-app-platform/tree/main/examples/live-transcript). The deployed Go agent has a separate runtime key, quota and ServiceAccount. Audio stays on the cluster; questions and selected monitoring data go to Foundry. Model keys and service-account credentials stay out of browser code.
 
 | Path | Purpose |
 | --- | --- |
-| `AGENTS.md` | Generation instructions, delivery steps and the speech API contract |
-| `devfile.yaml` | Browser workspace and ephemeral Git client |
-| `opencode.json` | DeepSeek via MaaS; the gateway URL and MaaS key come from workspace environment variables |
-| `deploy/base/` | Go application Deployment, Service and HTTPS Route |
-| `pipeline/base/` | Tekton image build |
+| `AGENTS.md` | Reference app, bounded tool/speech contracts and delivery instructions |
+| `devfile.yaml`, `opencode.json` | Dev Spaces and OpenCode coding model |
+| `deploy/base/` | Restricted Go app, OpenShift OAuth proxy, HTTPS Service and reencrypt Route |
+| `pipeline/base/` | Tekton clone, app-image validation and build |
 | `gitops/base/` | Developer-owned Argo CD instance |
 
-Follow the workshop to set up the platform, the scoped workspace identity and the model configuration. Then plan, generate, build and deploy with OpenCode. Verify the matching Git revision in Argo CD and test the microphone in the HTTPS app. The model key stays in workspace environment variables; speech audio goes to Whisper through the backend.
+Complete the workshop platform steps, including **Lab 1.6 runtime preparation**, before deploying. Copy all reference Go files, dependency files and embedded web assets; keep the prepared deployment scaffold. Ask a spoken question, review its text and submit it. Inspect actual PromQL, units, timestamps and missing-data errors in the evidence panel. The change exercise adds a **CPU over 1h** shortcut.
 
-The Dockerfile ships only the Go binary, so embed all web assets. The [tested reference app](https://github.com/fjcloud/aro-ai-app-platform/tree/main/examples/live-transcript) provides the capture and proxy baseline. The exercise adds a Copy transcript button.
+The app listens on loopback behind its OpenShift OAuth proxy. Participants need permission to read the application Service. The connector executes only server-owned metric expressions; it has no shell or mutation tools and never grants SCC privileges. The platform prepares read-only monitoring access and namespace-scoped MLflow integration.
 
-This template uses an external ephemeral Git service and fixed app namespaces. Use one participant per assigned cluster unless the facilitator adapts app names and permissions. Export code before the RHDP assignment expires.
+The Deployment points to the exact app image built by Tekton with `imagePullPolicy: Always`. The image guard selects the application container by name so the prepared OAuth sidecar is validated separately by platform setup. Never replace the app image with a placeholder or bypass the guard.
 
-The Deployment already points to the internal image built by Tekton and uses `imagePullPolicy: Always`. The pipeline runs `clone → validate-image → build`: a placeholder, wrong namespace or mismatched deployment image stops the build with an explicit error. For older personal checkouts, fix the image in Git before rebuilding; Argo CD reads the committed manifest.
-
-Template regression checks:
+This template uses an external ephemeral Git service and fixed namespaces. Use one participant per assigned cluster unless the facilitator isolates names and permissions. Export code before RHDP expiration. Runtime and coding MaaS keys expire after 24 hours; refresh them through their respective platform setup steps.
 
 ```sh
 python3 -m pip install -r tests/requirements.txt

@@ -78,7 +78,7 @@ spec:
               rendered=$(mktemp)
               trap 'rm -f "$rendered"' EXIT
               oc kustomize deploy/base > "$rendered"
-              deployed=$(oc create --dry-run=client --validate=false -f "$rendered" -o jsonpath='{..image}')
+              deployed=$(oc create --dry-run=client --validate=false -f "$rendered" -o jsonpath="{..containers[?(@.name=='${BUILD_NAMESPACE%-build}')].image}")
               if [ "$deployed" != "$BUILD_IMAGE" ]; then
                 printf 'Deployment image mismatch: %s\nExpected: %s\nFix deploy/base/deployment.yaml, commit and push before rebuilding.\n' "$deployed" "$BUILD_IMAGE" >&2
                 exit 1
