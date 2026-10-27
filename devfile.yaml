@@ -1,7 +1,7 @@
 schemaVersion: 2.2.2
 metadata:
   name: live-transcript-workspace
-  description: 'Orbit Checkpoint: document-inspection game, local T4 vision and MLflow traces'
+  description: 'Sky Control: live air-traffic decisions, local T4 inference and MLflow traces'
 attributes:
   controller.devfile.io/storage-type: per-user
 components:

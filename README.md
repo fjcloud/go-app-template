@@ -1,35 +1,32 @@
-# Go App Template — ARO Orbit Checkpoint experiment
+# Go App Template — ARO Sky Control experiment
 
-Inspect passport and cargo-permit images, apply the current shift directive and
-stamp **Clear**, **Inspect** or **Reject** before local d3-mini reveals its choice.
-Play a 12-courier shift against the AI, or watch it run the checkpoint.
+Watch local d3-mini run a fictional airport: assign landing runways, release
+departures or keep aircraft in holding patterns. The radar shows live trajectories
+and each applied/rejected decision. Increase traffic and simulation speed until
+the decision model cannot keep pace.
 
-The Go server owns documents, rules and scoring. Both players see the same image;
-the model never receives extracted fields or the answer key. Its mistakes remain
-visible. A failed model call leaves the courier waiting, without a fallback verdict.
+A Go engine owns movement, runway slots and separation. Inference runs
+asynchronously on the existing T4. Overdue, unsafe or stale commands do not take
+effect; an explicit safety shield prevents crashes. Its interventions, airport
+backlog and model deadline misses have separate counters. No fallback AI player.
 
-The coding assistant still uses DeepSeek through OpenShift AI MaaS. Game inference
-uses the existing T4 and internal System One endpoint. Keep the technical
-`live-transcript` app name, existing `decision-tetris` runtime identity/config,
-OpenShift OAuth and personal Git → Tekton → Argo CD delivery path.
+Keep the technical live-transcript app, decision-tetris runtime identity/config,
+OpenShift OAuth and personal Git → Tekton → Argo CD flow. Coding uses DeepSeek/MaaS;
+game decisions use only the internal local model, without another key or GPU.
 
-From the matching [workshop branch](https://github.com/fjcloud/aro-ai-app-platform/tree/feature/orbit-checkpoint),
-the facilitator prepares the local runtime and native MLflow experiment:
+The facilitator prepares the matching [workshop branch](https://github.com/fjcloud/aro-ai-app-platform/tree/feature/sky-control):
 
 ```sh
-python3 scripts/prepare-decision-tetris.py --reuse-runtime --game orbit-checkpoint
+python3 scripts/prepare-decision-tetris.py --reuse-runtime --game sky-control
 ```
 
-Omit `--reuse-runtime` when the custom runtime image has not been built yet.
-Copy the complete [Go reference](https://github.com/fjcloud/aro-ai-app-platform/tree/feature/orbit-checkpoint/examples/orbit-checkpoint),
-then follow `AGENTS.md` to build and ship. Inspect `orbit-checkpoint` traces in
-native MLflow. The community runtime uses FP16 on T4; this is an experiment,
-not a Red Hat validated model/runtime combination.
-
-The stable `aro-transcription` guide and ROSA `main` remain unchanged. The earlier
-Tetris prototype remains on `feature/decision-tetris`.
+Copy the [complete Go reference](https://github.com/fjcloud/aro-ai-app-platform/tree/feature/sky-control/examples/sky-control),
+then follow AGENTS.md to ship. Native MLflow's sky-control experiment contains
+atc.cycle and decision.choose spans. The community runtime uses approximate FP16
+numerics; this is a game experiment, not a Red Hat validated model/runtime or
+an operational aviation system. The stable guide and earlier prototypes remain
+on their existing branches; ROSA main is unchanged.
 
 ```sh
-python3 -m pip install -r tests/requirements.txt
 python3 -m unittest discover -s tests
 ```

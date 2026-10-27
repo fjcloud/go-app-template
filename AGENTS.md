@@ -108,28 +108,34 @@ Later change: local build, git push, new PipelineRun (same `oc create -f -`), `o
 
 Deployment: app requests 50m/64Mi, limits 500m/256Mi, HTTPS probes `/healthz:8443` through the OAuth proxy, `runAsNonRoot` + drop ALL, no `runAsUser`, no Route `spec.host`, TLS reencrypt + Redirect. Keep the OAuth proxy, loopback app listener, service CA mounts, service CA and decision-tetris ServiceAccount intact. The platform supplies these; never grant monitoring permissions yourself.
 
-## Orbit Checkpoint application contract
+## Sky Control application contract
 
-This application is Orbit Checkpoint, a 12-courier document-inspection game.
-Keep the technical live-transcript name, existing OAuth sidecar, decision-tetris
-ServiceAccount/config names and Git/Tekton/Argo CD image contract.
-The server renders a passport/permit PNG and owns the hidden answer key, seeded
-case deck, ordered rules, changing directives and score. Send only that exact image
-and the public rulebook/directive to the local d3-mini System One endpoint.
-Never send extracted document fields, expected verdicts or server-only case objects
-to the model or browser before the player stamps a decision.
+This application is Sky Control, a live radar/airport simulation managed by local
+d3-mini. Keep the technical live-transcript app name, existing decision-tetris
+ServiceAccount/config, OAuth sidecar and Git/Tekton/Argo CD image contract.
 
-The player chooses clear, inspect or reject; the model independently chooses from
-those three options. Show the model's actual mistakes, probabilities and the game
-engine's rule explanation. Never invent an AI explanation or silently correct its
-choice. Observer mode runs the same model path without awarding human points.
-Failed or cancelled inference must leave the round unresolved, without fallback.
-Preserve bounded sessions, same-origin checks, stale/duplicate rejection, document
-zoom on mobile and MLflow inspection/decision spans. No hosted inference, runtime
-model key, monitoring permissions, SCC grants or extra GPU.
+The Go engine owns time, positions, fuel, deterministic holding patterns,
+route following, runway reservations and continuous separation checks. The model
+chooses one typed landing/departure clearance or wait from the supplied options;
+it never pilots physics at render-frame rate. Do not substitute the reference
+controller when inference fails. The reference is only a deterministic test tool.
 
-Copy all Go files, go.mod, go.sum, Dockerfile and web/ from the tested reference:
-https://github.com/fjcloud/aro-ai-app-platform/tree/feature/orbit-checkpoint/examples/orbit-checkpoint
+Simulation ticks and HTTP controls must continue during inference. Copy an
+immutable traffic snapshot before the model call, then check the chosen command
+against CURRENT reservations and forecast separation. Drop overdue decisions;
+classify changed conditions separately from unsafe proposals. A visible safety
+shield pauses before a separation/fuel-reserve violation. Show its interventions
+separately: zero crashes is not proof of model competence.
+
+Difficulty controls change airborne target, arrivals and time acceleration.
+Expose inference, queue/preparation time, input tokens and the game's 45-simulation-
+second freshness window. Distinguish airport capacity, stale state, model errors
+and missed deadlines. Pausing/resetting cancels pending work; stale jobs must never
+apply to a new sector. Preserve bounded sessions, same-origin checks and telemetry.
+No hosted inference, runtime model key, extra GPU, monitoring/SCC/cluster grants.
+
+Copy all Go files, module files, Dockerfile and web/ from the tested reference:
+https://github.com/fjcloud/aro-ai-app-platform/tree/feature/sky-control/examples/sky-control
 
 The coding model remains DeepSeek through the prepared MaaS endpoint. The running
 game uses local d3-mini; never reuse the coding API key for runtime inference.
