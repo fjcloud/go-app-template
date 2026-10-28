@@ -1,7 +1,7 @@
 schemaVersion: 2.2.2
 metadata:
   name: live-transcript-workspace
-  description: 'Sky Control: live air-traffic decisions, local T4 inference and MLflow traces'
+  description: 'Signal Desk: archived news, local relevance scoring and a paper-investment game'
 attributes:
   controller.devfile.io/storage-type: per-user
 components:

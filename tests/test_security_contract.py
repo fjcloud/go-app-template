@@ -36,7 +36,7 @@ class SecurityContract(unittest.TestCase):
 class SignalDeskContract(unittest.TestCase):
     def test_only_oauth_proxy_exposes_the_app(self):
         spec = yaml.safe_load((ROOT/'deploy/base/deployment.yaml').read_text())['spec']['template']['spec']
-        self.assertEqual(spec['serviceAccountName'], 'decision-tetris')
+        self.assertEqual(spec['serviceAccountName'], 'signal-desk')
         app, proxy = spec['containers']
         self.assertIn({'name':'LISTEN_ADDR','value':'127.0.0.1:8080'}, app['env'])
         self.assertIn('--pass-user-bearer-token=false', proxy['args'])
@@ -51,7 +51,7 @@ class SignalDeskContract(unittest.TestCase):
         spec = yaml.safe_load((ROOT/'deploy/base/deployment.yaml').read_text())['spec']['template']['spec']
         self.assertNotIn('runtime-model', {v['name'] for v in spec['volumes']})
         app = spec['containers'][0]
-        self.assertEqual(app['envFrom'], [{'configMapRef': {'name': 'decision-tetris-config'}}])
+        self.assertEqual(app['envFrom'], [{'configMapRef': {'name': 'signal-desk-config'}}])
         self.assertNotIn('OPENAI_API_KEY', {e['name'] for e in app['env']})
         self.assertTrue(all(p['httpGet']['scheme']=='HTTPS' and p['httpGet']['port']==8443 for n,p in app.items() if n.endswith('Probe')))
 
@@ -60,7 +60,7 @@ class SignalDeskContract(unittest.TestCase):
         self.assertEqual(deployment['strategy']['type'], 'Recreate')
         spec = deployment['template']['spec']
         volumes = {v['name']: v for v in spec['volumes']}
-        self.assertEqual(volumes['data']['persistentVolumeClaim']['claimName'], 'briefing-desk-data')
-        self.assertEqual(volumes['model']['secret']['secretName'], 'briefing-desk-model')
+        self.assertEqual(volumes['data']['persistentVolumeClaim']['claimName'], 'signal-desk-data')
+        self.assertEqual(volumes['model']['secret']['secretName'], 'signal-desk-model')
         mounts = spec['containers'][0]['volumeMounts']
         self.assertTrue(next(m for m in mounts if m['name']=='model')['readOnly'])

@@ -16,7 +16,7 @@ spec:
       labels:
         app.kubernetes.io/name: live-transcript
     spec:
-      serviceAccountName: decision-tetris
+      serviceAccountName: signal-desk
       securityContext:
         runAsNonRoot: true
         seccompProfile:
@@ -27,7 +27,7 @@ spec:
         imagePullPolicy: Always
         envFrom:
         - configMapRef:
-            name: decision-tetris-config
+            name: signal-desk-config
         env:
         - name: LISTEN_ADDR
           value: 127.0.0.1:8080
@@ -80,14 +80,14 @@ spec:
             drop:
             - ALL
       - name: oauth-proxy
-        image: image-registry.openshift-image-registry.svc:5000/live-transcript-dev/cluster-voice-oauth:current
+        image: image-registry.openshift-image-registry.svc:5000/live-transcript-dev/signal-desk-oauth:current
         imagePullPolicy: Always
         args:
         - --provider=openshift
         - --https-address=:8443
         - --http-address=
         - --upstream=http://127.0.0.1:8080
-        - --openshift-service-account=decision-tetris
+        - --openshift-service-account=signal-desk
         - --openshift-sar={"namespace":"live-transcript-dev","resource":"services","resourceName":"live-transcript","verb":"get"}
         - --openshift-delegate-urls={"/":{"namespace":"live-transcript-dev","resource":"services","name":"live-transcript","verb":"get"}}
         - --tls-cert=/etc/tls/tls.crt
@@ -126,18 +126,18 @@ spec:
       volumes:
       - name: service-ca
         configMap:
-          name: cluster-voice-service-ca
+          name: signal-desk-service-ca
       - name: serving-cert
         secret:
-          secretName: cluster-voice-tls
+          secretName: signal-desk-tls
       - name: oauth-cookie
         secret:
-          secretName: cluster-voice-oauth
+          secretName: signal-desk-oauth
       - name: data
         persistentVolumeClaim:
-          claimName: briefing-desk-data
+          claimName: signal-desk-data
       - name: model
         secret:
-          secretName: briefing-desk-model
+          secretName: signal-desk-model
   strategy:
     type: Recreate
