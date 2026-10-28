@@ -106,38 +106,43 @@ Later change: local build, git push, new PipelineRun (same `oc create -f -`), `o
 
 ## OpenShift
 
-Deployment: app requests 50m/64Mi, limits 500m/256Mi, HTTPS probes `/healthz:8443` through the OAuth proxy, `runAsNonRoot` + drop ALL, no `runAsUser`, no Route `spec.host`, TLS reencrypt + Redirect. Keep the OAuth proxy, loopback app listener, service CA mounts, service CA and decision-tetris ServiceAccount intact. The platform supplies these; never grant monitoring permissions yourself.
+Deployment: app requests 50m/64Mi, limits 500m/512Mi, HTTPS probes `/healthz:8443` through the OAuth proxy, `runAsNonRoot` + drop ALL, no `runAsUser`, no Route `spec.host`, TLS reencrypt + Redirect. Keep the OAuth proxy, loopback app listener, service CA mounts, service CA and decision-tetris ServiceAccount intact. The platform supplies these; never grant monitoring permissions yourself.
 
-## Signal Desk application contract
+## Signal Desk / Techmeme terminal
 
-Build an English hedge-fund news feed. Use native OpenShift AI Responses at
-`$AGENT_URL` with `$AGENT_MODEL`, passing the backend-only provider key read from
-`$AGENT_KEY_FILE` in `X-OGX-Provider-Data`. Never send credentials to the browser,
-logs, Git, prompts or exported traces. Use `store:false`.
+Build an English, compact dark market terminal: fetch → summarize → BUY / SHORT /
+NO SIGNAL → investigate. Use Techmeme RSS, resolve publisher URLs from its HTML
+excerpts and clearly label excerpt-only coverage when publisher text is inaccessible.
+Keep one technology-index research focus; no profile/sidebar setup flow.
 
-The native Responses API returns typed function calls. The Go backend executes
-only the supplied read-only tool catalog, sends the actual results back to the
-same OpenShift AI service, and displays their activity. Bound the loop to six
-tool calls and seven turns. Keep article URLs scoped to user input or prior tool
-results. No shell, arbitrary URLs chosen by the model, or trading tools.
-Refuse private/reserved destinations and DNS rebinding, bound redirects and
-response sizes, and treat retrieved text as untrusted data.
+Use native OpenShift AI Responses at `$AGENT_URL` with `$AGENT_MODEL`. Read the
+backend provider key from `$AGENT_KEY_FILE`, pass it in X-OGX-Provider-Data, and
+use store:false. Execute only scoped read-only function tools. Bound the loop to
+six calls and seven turns. No credentials in Git, prompts, browser responses or
+traces. Block private/reserved destinations and DNS rebinding. Treat all source
+text as untrusted data. Resolve article URLs by backend-owned source IDs.
 
-Use the existing local d3-mini on the T4 through `$DECISION_URL` for financial
-triage: material, monitor, insufficient_context, not_financial. Validate full input
-coverage and all probabilities. Investigate only fresh positive classifications.
-Mandate edits invalidate previous classifications/research. Never replace failed
-model calls with fabricated or heuristic results.
+Use the existing local d3-mini at `$DECISION_URL` for buy / short / no_signal.
+Validate complete input coverage, known categories and all probabilities. Only
+fresh BUY/SHORT results unlock investigation. No failed-model heuristic fallback.
 
-Show actual tool activity, source evidence, sourced facts, conditional financial
-hypotheses, unknowns and next checks. Require at least two distinct successful
-tools including the original article. Export English Markdown. Do not invent
-prices or company connections. No trade execution or client messaging.
+Investigations retrieve sources and timestamped reference quotes, then map a thesis
+to QQQ, SPY, SMH or XLK (ETF proxies, not directly tradable indices). Bind entry
+prices only to actual tool evidence; discard any model-supplied quote. Targets,
+stops and horizon are explicit hypothetical assumptions. Calculate long/short gross
+scenario P&L deterministically. Missing or stale quotes produce no priced scenario.
+Never present conditional target-case P&L as a statistically expected return or
+an executable quote. No order execution or client messaging.
 
-Persist documents, mandates and notes under `$DATA_DIR` on the prepared PVC.
-Interrupted jobs become retryable failures on restart. Keep the technical app
-name live-transcript, OAuth protection, exact image contract, restricted-v2
-and existing Git → Tekton → Argo CD workflow. Do not grant SCCs or RBAC.
+Keep the UI to a news table, three signal filters, reference-price strip and a
+research panel. Show source facts, conditional thesis, unknowns, actual tool
+activity and Markdown export. Edited scenario values must match the exported note.
 
-Verify with `go test -race ./...`, `go vet ./...`, an actual native Responses tool
-round-trip and a browser flow before claiming delivery.
+Persist documents and notes under DATA_DIR on the prepared PVC. Preserve OAuth,
+restricted-v2, the live-transcript image contract and Git → Tekton → Argo CD. No
+new SCC, RBAC, GPU or hosting resources. Local PREVIEW_MODE uses clearly marked
+fictional fixtures and a separate data directory, and cannot run model jobs.
+
+Verify Go race tests, vet, opt-in real RSS/quote checks and local browser fixtures.
+A new live OpenShift validation is required after the replacement lab is ready;
+local fixture tests do not establish native inference or T4 performance.

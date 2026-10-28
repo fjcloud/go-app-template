@@ -1,20 +1,20 @@
-# Signal Desk
+# Signal Desk / Techmeme terminal
 
-An English news intelligence desk for a hedge-fund workshop.
+A compact English research terminal for the ARO workshop.
 
-1. Select a fund mandate and **Scan news**.
-2. Read English summaries and financial relevance from the local T4 model.
-3. Select **Investigate** on a relevant story. Follow the OpenShift AI agent's
-   tool activity and inspect the source-backed research draft.
-4. Export a summary, research note or financial briefing as Markdown.
+1. **Fetch Techmeme** to retrieve and summarize technology news.
+2. Read **BUY / SHORT / NO SIGNAL** rankings from the local T4 decision model.
+3. **Investigate** a directional story to examine an index-proxy thesis,
+   timestamped reference price and conditional target/stop P&L.
+4. Edit scenario assumptions or export the research note as Markdown.
 
-The facilitator prepares the existing agent, local model, runtime key and storage
-with `prepare-briefing-desk.py` from the workshop repository before deployment.
-The MaaS key lasts 24 hours; rerun preparation and restart the app to renew it.
+The app uses native OpenShift AI Responses and read-only tools. Entry prices come
+from quote evidence, while targets/stops are hypothetical assumptions. There is no
+calibrated expected-return estimate or order execution.
 
-The app uses native OpenShift AI Responses and read-only function tools executed by the backend,
-public BBC/France 24 RSS, SEC submission metadata and ECB reference rates.
-Current-feed search is bounded; it is not exhaustive web research. Source facts,
-financial hypotheses and missing evidence remain separate. No trades are executed.
+The facilitator prepares the existing model/agent, 24h MaaS key and persistent
+storage. The public service stays behind OAuth under restricted-v2. Keep the
+live-transcript image and Git → Tekton → Argo CD contract in AGENTS.md.
 
-See AGENTS.md for the application, security and delivery contract.
+The working Go reference and clearly labeled local preview are in
+[the workshop repository](https://github.com/fjcloud/aro-ai-app-platform/tree/feature/briefing-desk/examples/briefing-desk).
