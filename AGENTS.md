@@ -120,6 +120,17 @@ Never start Argo CD delivery before the build and this registry check succeed.
 
 3. Image pull permissions are already prepared by the platform. Do not add RBAC or SCC grants. Verify the preconfigured Deployment image. In `${APP_NAME}-dev`: `oc apply -k gitops/base -n ${APP_NAME}-dev`. Create the Argo CD Application **in ${APP_NAME}-dev** (destination namespace `${APP_NAME}-dev`, repo origin, path `deploy/base`, auto-sync). Wait for the matching Git revision to be Synced / Healthy and the Deployment rollout to finish. Verify its running image equals IMAGE. Only then print app + `argocd-server` Route URLs.
 
+Check the actual fields, not condition names (Argo CD has no Synced condition):
+
+```sh
+REVISION=$(git rev-parse HEAD)
+oc annotate application "$APP_NAME" -n "${APP_NAME}-dev" argocd.argoproj.io/refresh=hard --overwrite
+oc wait application/"$APP_NAME" -n "${APP_NAME}-dev" --for=jsonpath='{.status.sync.revision}'="$REVISION" --timeout=180s
+oc wait application/"$APP_NAME" -n "${APP_NAME}-dev" --for=jsonpath='{.status.sync.status}'=Synced --timeout=180s
+oc wait application/"$APP_NAME" -n "${APP_NAME}-dev" --for=jsonpath='{.status.health.status}'=Healthy --timeout=300s
+oc rollout status deployment/"$APP_NAME" -n "${APP_NAME}-dev" --timeout=180s
+```
+
 Later change: local build, git push, new PipelineRun (same `oc create -f -`), `oc rollout restart deployment/$APP_NAME -n ${APP_NAME}-dev`.
 
 ## OpenShift

@@ -6,6 +6,7 @@ Build one simple English Go web app: **last week's news → memo relevance → i
 
 1. Edit a fund memo (default: semiconductors and electronic components).
 2. Load the previous Monday–Sunday from Techmeme archives, rank every collected primary story and show the imported/ranked counts. Export all collected news and coverage gaps as JSON. Initially show 30 stories with Show more.
+   If cloud requests are blocked, offer **Import news** for a same-week Signal Desk JSON export. Validate dates/source URLs and label manual provenance. Ignore uploaded scores, research and portfolio data; score archived facts using the server model.
 3. Open a story and find up to three hypothetical long-only ETF ideas (QQQ, SPY, SMH or XLK), with a short thesis, risk and actual source evidence. No supported exposure is a valid outcome.
 4. Allocate a virtual **$10,000** across selected ideas. No result or future price is shown yet.
 5. Reveal: persist and freeze the entire portfolio before requesting historical prices. Entry is the first available US session open after the news week; exit is the latest completed US session close this week. Show dates, source prices, position P&L and total fund value including uninvested cash.
@@ -42,6 +43,7 @@ Reuse the reference JSON contracts:
 | `GET /healthz` | `{"status":"ok"}` |
 | `GET /api/game` | Week, memo, news, ranking progress, ideas and current round |
 | `POST /api/game/load` | Start/resume archive import and scoring |
+| `POST /api/game/import` | Import a bounded same-week JSON news export and rank its archived facts |
 | `GET /api/game/export` | Full collected corpus and disclosed coverage gaps |
 | `POST /api/profiles` | Save fund memo and re-score |
 | `POST /api/game/ideas` | Research a scored `article_id` |
