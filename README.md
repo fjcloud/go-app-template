@@ -1,21 +1,14 @@
 # Signal Desk
 
-News ranked for an investment memo, starting with a semiconductor fund.
+A simple paper-investment game, in English.
 
-1. **Edit the memo** to describe the fund’s focus.
-2. **Refresh news** to fetch and summarize Techmeme stories.
-3. Read **opportunity scores /100** and their memo-specific explanations.
-4. Open a story to investigate its implications or export the research note.
+1. **Set your fund memo**, starting with semiconductors and components.
+2. **Load last week's Techmeme news** and read the relevance ranking /100.
+3. **Find index ideas** for an interesting story: the agent compares archived evidence and explains the risk.
+4. **Allocate $10,000 of virtual money**, then reveal this week's actual result.
 
-The UI is a memo and a ranked list. d3-mini scores research relevance/materiality;
-positive and negative news can both rank highly. The score is neither BUY/SELL,
-confidence nor an expected return. Changing the memo re-scores existing summaries
-and hides old research.
+Choices freeze before market prices are fetched. Entry uses the first US session open after the news week; valuation uses the latest completed session close. A running week is clearly marked provisional. Export the collected news and coverage gaps as JSON.
 
-The app uses OpenShift AI and read-only tools. Keep the prepared OAuth,
-restricted-v2, storage and Git → Tekton → Argo CD deployment contract in AGENTS.md.
-Detailed research can include sourced reference quotes and hypothetical scenarios;
-no orders are executed.
+d3-mini ranks memo relevance; DeepSeek proposes hypothetical ETF exposures. A score is not confidence, BUY/SELL or predicted profit. Returns exclude dividends, fees and slippage. This is an educational replay, not a blind backtest. No orders are executed.
 
-The working Go reference, live local setup and labeled preview are in
-[the workshop repository](https://github.com/fjcloud/aro-ai-app-platform/tree/feature/briefing-desk/examples/briefing-desk).
+Keep the prepared OAuth, restricted-v2, storage and Git → Tekton → Argo CD contract in AGENTS.md. The working Go reference and local setup are in [the workshop repository](https://github.com/fjcloud/aro-ai-app-platform/tree/feature/briefing-desk/examples/briefing-desk).

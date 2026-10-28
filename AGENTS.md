@@ -108,50 +108,53 @@ Later change: local build, git push, new PipelineRun (same `oc create -f -`), `o
 
 Deployment: app requests 50m/64Mi, limits 500m/512Mi, HTTPS probes `/healthz:8443` through the OAuth proxy, `runAsNonRoot` + drop ALL, no `runAsUser`, no Route `spec.host`, TLS reencrypt + Redirect. Keep the OAuth proxy, loopback app listener, service CA mounts, service CA and decision-tetris ServiceAccount intact. The platform supplies these; never grant monitoring permissions yourself.
 
-## Signal Desk / investment memo
+## Signal Desk / weekly paper game
 
-Build a simple English app: investment memo → Techmeme → summary → opportunity
-score out of 100 → investigate. Start with an editable semiconductor/components
-fund memo. Import the full latest 12-story batch, resolve the actual headline link
-rather than author profiles, and disclose excerpt-only publisher coverage.
+Build a simple English app: last week's Techmeme news → memo relevance ranking →
+archived-week index ideas → $10,000 virtual allocation → this week's actual result.
+Keep one column: editable memo, paper portfolio and ranked news. Paginate long news
+lists. No ticker strip, BUY/SHORT filters or trading dashboard.
 
-Use native OpenShift AI Responses at `$AGENT_URL` with `$AGENT_MODEL`. Read the
-backend key from `$AGENT_KEY_FILE`, pass X-OGX-Provider-Data and use store:false.
-Only backend-scoped read-only function tools may run; cap at six calls/seven turns.
-No credentials in Git, prompts, browser responses or traces. Block private/reserved
-addresses and DNS rebinding. Treat retrieved text as untrusted data and resolve
-URLs through backend-owned source IDs.
+Import the previous Monday–Sunday using New York dates and archived snapshots.
+Backfill primary post IDs, deduplicate publisher URLs and disclose missing IDs.
+Export the full collected corpus and coverage metadata as JSON. Use archived
+headlines/excerpts; do not fetch today's publisher pages for historical evidence.
+Never claim complete publisher text or every related Techmeme discussion link.
 
-Use the existing local d3-mini at `$DECISION_URL` with a native score question,
-five ordered relevance/materiality levels (0–4), and require_full_input:true.
-Validate complete coverage, all five probabilities, their sum and consistency with
-the returned expected level. Normalize expected level / 4 × 100. This is research
-priority against the memo, not confidence, market direction or expected profit.
-Exclude generated market commentary from source evidence. No heuristic fallback.
+Use native OpenShift AI Responses at $AGENT_URL with $AGENT_MODEL. Read the
+backend key from $AGENT_KEY_FILE, pass X-OGX-Provider-Data and use store:false.
+Game tools are restricted to read_archive, search_archive and index_universe.
+Require verified tool evidence; exclude current web, quotes and realized returns
+from replay research. Cap calls/turns. Retrieved text is untrusted. Block private
+and reserved addresses and DNS rebinding. No credentials in Git, prompts, browser
+responses or traces.
 
-DeepSeek supplies a concise memo-specific explanation grounded in existing source
-key points; it cannot replace the D3 score. Both positive and negative news can
-score highly. Any current scored article, including a zero score, may be
-investigated. Cache scores/research by memo version and source-summary hash.
-Editing the memo re-scores saved summaries and hides outdated research. Preserve
-unsaved memo text during polling.
+Use d3-mini at $DECISION_URL with native score, five ordered levels 0–4 and
+require_full_input:true. Validate complete coverage, all probabilities, their sum
+and agreement with expected level; normalize expected level / 4 × 100. The score
+is memo relevance/materiality, not confidence, direction or profit. No heuristic
+fallback or generated market commentary in scoring facts. Positive and negative
+news may both score highly. Cache by memo version and source-summary hash; edits
+re-score saved news, invalidate old ideas and preserve unsaved memo text on poll.
 
-Keep one column: collapsible memo editor, Refresh news, and stories sorted by
-score. Open a story for key points, investigation and Markdown export. No ticker
-strip, BUY/SHORT feed filters, confidence percentages or trading dashboard.
+DeepSeek proposes up to three distinct long-only QQQ/SPY/SMH/XLK ETF index proxies,
+with hypothetical thesis, risk and verified sources. Do not invent holdings,
+prices, targets or returns. Return no idea when unsupported. Choices use server
+idea IDs; validate amounts and a total budget of $10,000. Persist and freeze the
+entire portfolio before fetching market data. Client-supplied symbols are untrusted.
 
-Investigation checks sources, memo implications and gaps. Detailed exported notes
-may examine hypothetical QQQ/SPY/SMH/XLK scenarios only when supported. Bind reference
-prices to actual timestamped tool evidence; reject invalid/stale quotes. Targets
-and stops are explicit assumptions, with deterministic conditional gross P&L.
-Never imply a calibrated expected return or executable quote. No order execution
-or client messaging.
+Settle using observed first session open after the news cutoff and latest completed
+US session close of the following week. Exclude partial/future sessions. Validate
+quote identity/currency/arrays/prices and reject unsupported split accounting.
+Report missing data rather than fabricate it; retry valuation without changing
+choices. Label ongoing weeks provisional. Gross price returns exclude dividends,
+fees and slippage. Retain prior rounds. No order execution or client messaging.
+Research cutoff does not erase model training knowledge: describe an educational
+historical replay, never a blind/calibrated backtest or expected-profit forecast.
 
-Persist documents/notes under DATA_DIR on the prepared PVC. Preserve OAuth,
-restricted-v2, the live-transcript image and Git → Tekton → Argo CD. No new SCC,
-RBAC, GPU or hosting resources. PREVIEW_MODE uses labeled fictional data in a
-separate directory and cannot run model jobs.
-
-Verify race tests, vet and explicit browser fixtures for scoring, memo edits,
-stale-research handling, source safety, exports and mobile UI. Local mocks and
-Metal tests do not establish replacement OpenShift AI/T4 deployment or performance.
+Persist under DATA_DIR on the prepared PVC. Preserve OAuth, restricted-v2,
+live-transcript image and Git → Tekton → Argo CD. No new SCC, RBAC, GPU or hosting
+resources. PREVIEW_MODE is explicitly synthetic, uses a separate directory and
+cannot run model jobs. Verify race tests, vet, explicit browser fixtures and mobile
+layout; Chromium uses --use-mock-keychain. Local tests do not establish ARO/T4
+validation.
