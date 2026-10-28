@@ -4,6 +4,24 @@ OpenShift Dev Space. `oc` is authenticated. `$GIT_SERVER` and `$APP_NAME` are se
 
 No Ansible. No `scripts/`. Do not rewrite `deploy/`, `pipeline/`, `gitops/`, `devfile.yaml`, or `opencode.json` (only change `image:` in `deploy/base/deployment.yaml` when shipping).
 
+## Fetch the reference once
+
+Use Git and copy the complete source tree before coding. Avoid fetching individual
+GitHub HTML pages: it loses files and fills the model context with source text.
+
+```sh
+REFERENCE_DIR=$(mktemp -d)
+git clone --depth 1 --branch feature/briefing-desk \
+  https://github.com/fjcloud/aro-ai-app-platform.git "$REFERENCE_DIR/workshop"
+cp "$REFERENCE_DIR/workshop/examples/briefing-desk/"*.go .
+cp "$REFERENCE_DIR/workshop/examples/briefing-desk/"go.{mod,sum} .
+cp -R "$REFERENCE_DIR/workshop/examples/briefing-desk/web" .
+```
+
+Copy only those sources/assets. The existing delivery scaffold and app contract
+belong to this template. Use the reference as the baseline, then implement the
+requested feature locally and test it.
+
 ## Generate
 
 `main.go` — HTTP on `$LISTEN_ADDR` (default `:8080`, `127.0.0.1:8080` behind the prepared OAuth proxy), `GET /`, `GET /healthz` → `{"status":"ok"}`
