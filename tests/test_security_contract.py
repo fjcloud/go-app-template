@@ -33,7 +33,7 @@ class SecurityContract(unittest.TestCase):
         self.assertNotIn('privileged: true', agents)
         self.assertNotIn('oc create namespace', agents)
 
-class LocalDecisionGameContract(unittest.TestCase):
+class SignalDeskContract(unittest.TestCase):
     def test_only_oauth_proxy_exposes_the_app(self):
         spec = yaml.safe_load((ROOT/'deploy/base/deployment.yaml').read_text())['spec']['template']['spec']
         self.assertEqual(spec['serviceAccountName'], 'decision-tetris')
@@ -42,7 +42,11 @@ class LocalDecisionGameContract(unittest.TestCase):
         self.assertIn('--pass-user-bearer-token=false', proxy['args'])
         self.assertIn('--pass-access-token=false', proxy['args'])
         service = yaml.safe_load((ROOT/'deploy/base/service.yaml').read_text())
-        self.assertEqual(service['spec']['ports'], [{'name':'https','port':8443,'targetPort':'oauth'}])
+        self.assertEqual(service['spec']['ports'], [{'name':'https','port':8443,'targetPort':'oauth'}, {'name':'research-mcp','port':8090,'targetPort':'mcp'}])
+        self.assertEqual(yaml.safe_load((ROOT/'deploy/base/route.yaml').read_text())['spec']['port']['targetPort'], 'https')
+        policy = yaml.safe_load((ROOT/'deploy/base/research-network-policy.yaml').read_text())['spec']
+        mcp = next(rule for rule in policy['ingress'] if rule['ports'][0]['port']==8090)
+        self.assertEqual(mcp['from'], [{'podSelector': {'matchLabels': {'app':'ogx','app.kubernetes.io/instance':'lsd-genai-playground'}}}])
         route = yaml.safe_load((ROOT/'deploy/base/route.yaml').read_text())
         self.assertEqual(route['spec']['tls']['termination'], 'reencrypt')
         self.assertEqual(route['metadata']['annotations']['haproxy.router.openshift.io/timeout'], '120s')
@@ -54,3 +58,13 @@ class LocalDecisionGameContract(unittest.TestCase):
         self.assertEqual(app['envFrom'], [{'configMapRef': {'name': 'decision-tetris-config'}}])
         self.assertNotIn('OPENAI_API_KEY', {e['name'] for e in app['env']})
         self.assertTrue(all(p['httpGet']['scheme']=='HTTPS' and p['httpGet']['port']==8443 for n,p in app.items() if n.endswith('Probe')))
+
+    def test_persistent_data_and_backend_only_provider_key(self):
+        deployment = yaml.safe_load((ROOT/'deploy/base/deployment.yaml').read_text())['spec']
+        self.assertEqual(deployment['strategy']['type'], 'Recreate')
+        spec = deployment['template']['spec']
+        volumes = {v['name']: v for v in spec['volumes']}
+        self.assertEqual(volumes['data']['persistentVolumeClaim']['claimName'], 'briefing-desk-data')
+        self.assertEqual(volumes['model']['secret']['secretName'], 'briefing-desk-model')
+        mounts = spec['containers'][0]['volumeMounts']
+        self.assertTrue(next(m for m in mounts if m['name']=='model')['readOnly'])

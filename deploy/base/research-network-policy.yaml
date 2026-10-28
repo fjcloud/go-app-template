@@ -1,0 +1,25 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: signal-desk-ingress
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: live-transcript
+  policyTypes: [Ingress]
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              network.openshift.io/policy-group: ingress
+      ports:
+        - protocol: TCP
+          port: 8443
+    - from:
+        - podSelector:
+            matchLabels:
+              app: ogx
+              app.kubernetes.io/instance: lsd-genai-playground
+      ports:
+        - protocol: TCP
+          port: 8090

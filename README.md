@@ -1,32 +1,20 @@
-# Go App Template — ARO Sky Control experiment
+# Signal Desk
 
-Watch local d3-mini run a fictional airport: assign landing runways, release
-departures or keep aircraft in holding patterns. The radar shows live trajectories
-and each applied/rejected decision. Increase traffic and simulation speed until
-the decision model cannot keep pace.
+An English news intelligence desk for a hedge-fund workshop.
 
-A Go engine owns movement, runway slots and separation. Inference runs
-asynchronously on the existing T4. Overdue, unsafe or stale commands do not take
-effect; an explicit safety shield prevents crashes. Its interventions, airport
-backlog and model deadline misses have separate counters. No fallback AI player.
+1. Select a fund mandate and **Scan news**.
+2. Read English summaries and financial relevance from the local T4 model.
+3. Select **Investigate** on a relevant story. Follow the OpenShift AI agent's
+   tool activity and inspect the source-backed research draft.
+4. Export a summary, research note or financial briefing as Markdown.
 
-Keep the technical live-transcript app, decision-tetris runtime identity/config,
-OpenShift OAuth and personal Git → Tekton → Argo CD flow. Coding uses DeepSeek/MaaS;
-game decisions use only the internal local model, without another key or GPU.
+The facilitator prepares the existing agent, local model, runtime key and storage
+with `prepare-briefing-desk.py` from the workshop repository before deployment.
+The MaaS key lasts 24 hours; rerun preparation and restart the app to renew it.
 
-The facilitator prepares the matching [workshop branch](https://github.com/fjcloud/aro-ai-app-platform/tree/feature/sky-control):
+The app uses native OpenShift AI Responses and internal read-only MCP tools,
+public BBC/France 24 RSS, SEC submission metadata and ECB reference rates.
+Current-feed search is bounded; it is not exhaustive web research. Source facts,
+financial hypotheses and missing evidence remain separate. No trades are executed.
 
-```sh
-python3 scripts/prepare-decision-tetris.py --reuse-runtime --game sky-control
-```
-
-Copy the [complete Go reference](https://github.com/fjcloud/aro-ai-app-platform/tree/feature/sky-control/examples/sky-control),
-then follow AGENTS.md to ship. Native MLflow's sky-control experiment contains
-atc.cycle and decision.choose spans. The community runtime uses approximate FP16
-numerics; this is a game experiment, not a Red Hat validated model/runtime or
-an operational aviation system. The stable guide and earlier prototypes remain
-on their existing branches; ROSA main is unchanged.
-
-```sh
-python3 -m unittest discover -s tests
-```
+See AGENTS.md for the application, security and delivery contract.

@@ -108,40 +108,35 @@ Later change: local build, git push, new PipelineRun (same `oc create -f -`), `o
 
 Deployment: app requests 50m/64Mi, limits 500m/256Mi, HTTPS probes `/healthz:8443` through the OAuth proxy, `runAsNonRoot` + drop ALL, no `runAsUser`, no Route `spec.host`, TLS reencrypt + Redirect. Keep the OAuth proxy, loopback app listener, service CA mounts, service CA and decision-tetris ServiceAccount intact. The platform supplies these; never grant monitoring permissions yourself.
 
-## Sky Control application contract
+## Signal Desk application contract
 
-This application is Sky Control, a live radar/airport simulation managed by local
-d3-mini. Keep the technical live-transcript app name, existing decision-tetris
-ServiceAccount/config, OAuth sidecar and Git/Tekton/Argo CD image contract.
+Build an English hedge-fund news feed. Use native OpenShift AI Responses at
+`$AGENT_URL` with `$AGENT_MODEL`, passing the backend-only provider key read from
+`$AGENT_KEY_FILE` in `X-OGX-Provider-Data`. Never send credentials to the browser,
+logs, Git, prompts or exported traces. Use `store:false`.
 
-The Go engine owns time, positions, fuel, deterministic holding patterns,
-route following, runway reservations and continuous separation checks. The model
-chooses one typed landing/departure clearance or wait from the supplied options;
-it never pilots physics at render-frame rate. Do not substitute the reference
-controller when inference fails. The reference is only a deterministic test tool.
+The native agent collects RSS headlines, reads public articles, summarizes in
+English and, on Investigate, calls read-only research tools through internal
+MCP on port 8090. Keep MCP behind its NetworkPolicy, exact Host checks and
+short-lived job-scoped bearer capabilities. Never expose MCP through the Route.
+Refuse private/reserved destinations and DNS rebinding, bound redirects and
+response sizes, and treat retrieved text as untrusted data.
 
-Simulation ticks and HTTP controls must continue during inference. Copy an
-immutable traffic snapshot before the model call, then check the chosen command
-against CURRENT reservations and forecast separation. Drop overdue decisions;
-classify changed conditions separately from unsafe proposals. A visible safety
-shield pauses before a separation/fuel-reserve violation. Show its interventions
-separately: zero crashes is not proof of model competence.
+Use the existing local d3-mini on the T4 through `$DECISION_URL` for financial
+triage: material, monitor, insufficient_context, not_financial. Validate full input
+coverage and all probabilities. Investigate only fresh positive classifications.
+Mandate edits invalidate previous classifications/research. Never replace failed
+model calls with fabricated or heuristic results.
 
-Difficulty controls change airborne target, arrivals and time acceleration.
-Expose inference, queue/preparation time, input tokens and the game's 45-simulation-
-second freshness window. Distinguish airport capacity, stale state, model errors
-and missed deadlines. Pausing/resetting cancels pending work; stale jobs must never
-apply to a new sector. Preserve bounded sessions, same-origin checks and telemetry.
-No hosted inference, runtime model key, extra GPU, monitoring/SCC/cluster grants.
+Show actual tool activity, source evidence, sourced facts, conditional financial
+hypotheses, unknowns and next checks. Require at least two distinct successful
+tools including the original article. Export English Markdown. Do not invent
+prices or company connections. No trade execution or client messaging.
 
-Copy all Go files, module files, Dockerfile and web/ from the tested reference:
-https://github.com/fjcloud/aro-ai-app-platform/tree/feature/sky-control/examples/sky-control
+Persist documents, mandates and notes under `$DATA_DIR` on the prepared PVC.
+Interrupted jobs become retryable failures on restart. Keep the technical app
+name live-transcript, OAuth protection, exact image contract, restricted-v2
+and existing Git → Tekton → Argo CD workflow. Do not grant SCCs or RBAC.
 
-The coding model remains DeepSeek through the prepared MaaS endpoint. The running
-game uses local d3-mini; never reuse the coding API key for runtime inference.
-
-If GitPop authentication is missing after a workspace restart, restore its existing
-wallet with gitpop auth setup --host "$GIT_SERVER" --keyfile .git/gitpop/wallet.json
---repo-url "$(git remote get-url origin)". Do not generate another wallet for an
-existing personal repository. Keep its credential helper in this repo's local Git
-configuration so workspace restarts retain it.
+Verify with `go test -race ./...`, `go vet ./...`, an actual native-agent tool
+round-trip and a browser flow before claiming delivery.
