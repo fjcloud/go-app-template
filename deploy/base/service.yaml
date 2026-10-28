@@ -3,7 +3,7 @@ kind: Service
 metadata:
   name: live-transcript
   annotations:
-    service.beta.openshift.io/serving-cert-secret-name: cluster-voice-tls
+    service.beta.openshift.io/serving-cert-secret-name: signal-desk-tls
   labels:
     app.kubernetes.io/name: live-transcript
 spec:
