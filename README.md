@@ -1,20 +1,21 @@
-# Signal Desk / Techmeme terminal
+# Signal Desk
 
-A compact English research terminal for the ARO workshop.
+News ranked for an investment memo, starting with a semiconductor fund.
 
-1. **Fetch Techmeme** to retrieve and summarize technology news.
-2. Read **BUY / SHORT / NO SIGNAL** rankings from the local T4 decision model.
-3. **Investigate** a directional story to examine an index-proxy thesis,
-   timestamped reference price and conditional target/stop P&L.
-4. Edit scenario assumptions or export the research note as Markdown.
+1. **Edit the memo** to describe the fund’s focus.
+2. **Refresh news** to fetch and summarize Techmeme stories.
+3. Read **opportunity scores /100** and their memo-specific explanations.
+4. Open a story to investigate its implications or export the research note.
 
-The app uses native OpenShift AI Responses and read-only tools. Entry prices come
-from quote evidence, while targets/stops are hypothetical assumptions. There is no
-calibrated expected-return estimate or order execution.
+The UI is a memo and a ranked list. d3-mini scores research relevance/materiality;
+positive and negative news can both rank highly. The score is neither BUY/SELL,
+confidence nor an expected return. Changing the memo re-scores existing summaries
+and hides old research.
 
-The facilitator prepares the existing model/agent, 24h MaaS key and persistent
-storage. The public service stays behind OAuth under restricted-v2. Keep the
-live-transcript image and Git → Tekton → Argo CD contract in AGENTS.md.
+The app uses OpenShift AI and read-only tools. Keep the prepared OAuth,
+restricted-v2, storage and Git → Tekton → Argo CD deployment contract in AGENTS.md.
+Detailed research can include sourced reference quotes and hypothetical scenarios;
+no orders are executed.
 
-The working Go reference and clearly labeled local preview are in
+The working Go reference, live local setup and labeled preview are in
 [the workshop repository](https://github.com/fjcloud/aro-ai-app-platform/tree/feature/briefing-desk/examples/briefing-desk).
