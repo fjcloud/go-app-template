@@ -13,6 +13,3 @@ spec:
   - name: https
     port: 8443
     targetPort: oauth
-  - name: research-mcp
-    port: 8090
-    targetPort: mcp

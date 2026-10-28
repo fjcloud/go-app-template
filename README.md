@@ -12,7 +12,7 @@ The facilitator prepares the existing agent, local model, runtime key and storag
 with `prepare-briefing-desk.py` from the workshop repository before deployment.
 The MaaS key lasts 24 hours; rerun preparation and restart the app to renew it.
 
-The app uses native OpenShift AI Responses and internal read-only MCP tools,
+The app uses native OpenShift AI Responses and read-only function tools executed by the backend,
 public BBC/France 24 RSS, SEC submission metadata and ECB reference rates.
 Current-feed search is bounded; it is not exhaustive web research. Source facts,
 financial hypotheses and missing evidence remain separate. No trades are executed.

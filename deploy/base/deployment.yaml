@@ -41,8 +41,6 @@ spec:
           value: maas-vllm-inference-1/deepseekv4pro
         - name: AGENT_KEY_FILE
           value: /etc/model/api-key
-        - name: MCP_URL
-          value: http://live-transcript.live-transcript-dev.svc.cluster.local:8090/mcp
         volumeMounts:
         - name: service-ca
           mountPath: /etc/service-ca
@@ -54,8 +52,6 @@ spec:
           readOnly: true
         ports:
         - containerPort: 8080
-        - name: mcp
-          containerPort: 8090
         resources:
           requests:
             cpu: 50m

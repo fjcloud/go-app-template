@@ -115,10 +115,11 @@ Build an English hedge-fund news feed. Use native OpenShift AI Responses at
 `$AGENT_KEY_FILE` in `X-OGX-Provider-Data`. Never send credentials to the browser,
 logs, Git, prompts or exported traces. Use `store:false`.
 
-The native agent collects RSS headlines, reads public articles, summarizes in
-English and, on Investigate, calls read-only research tools through internal
-MCP on port 8090. Keep MCP behind its NetworkPolicy, exact Host checks and
-short-lived job-scoped bearer capabilities. Never expose MCP through the Route.
+The native Responses API returns typed function calls. The Go backend executes
+only the supplied read-only tool catalog, sends the actual results back to the
+same OpenShift AI service, and displays their activity. Bound the loop to six
+tool calls and seven turns. Keep article URLs scoped to user input or prior tool
+results. No shell, arbitrary URLs chosen by the model, or trading tools.
 Refuse private/reserved destinations and DNS rebinding, bound redirects and
 response sizes, and treat retrieved text as untrusted data.
 
@@ -138,5 +139,5 @@ Interrupted jobs become retryable failures on restart. Keep the technical app
 name live-transcript, OAuth protection, exact image contract, restricted-v2
 and existing Git → Tekton → Argo CD workflow. Do not grant SCCs or RBAC.
 
-Verify with `go test -race ./...`, `go vet ./...`, an actual native-agent tool
+Verify with `go test -race ./...`, `go vet ./...`, an actual native Responses tool
 round-trip and a browser flow before claiming delivery.

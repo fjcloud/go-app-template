@@ -42,11 +42,7 @@ class SignalDeskContract(unittest.TestCase):
         self.assertIn('--pass-user-bearer-token=false', proxy['args'])
         self.assertIn('--pass-access-token=false', proxy['args'])
         service = yaml.safe_load((ROOT/'deploy/base/service.yaml').read_text())
-        self.assertEqual(service['spec']['ports'], [{'name':'https','port':8443,'targetPort':'oauth'}, {'name':'research-mcp','port':8090,'targetPort':'mcp'}])
-        self.assertEqual(yaml.safe_load((ROOT/'deploy/base/route.yaml').read_text())['spec']['port']['targetPort'], 'https')
-        policy = yaml.safe_load((ROOT/'deploy/base/research-network-policy.yaml').read_text())['spec']
-        mcp = next(rule for rule in policy['ingress'] if rule['ports'][0]['port']==8090)
-        self.assertEqual(mcp['from'], [{'podSelector': {'matchLabels': {'app':'ogx','app.kubernetes.io/instance':'lsd-genai-playground'}}}])
+        self.assertEqual(service['spec']['ports'], [{'name':'https','port':8443,'targetPort':'oauth'}])
         route = yaml.safe_load((ROOT/'deploy/base/route.yaml').read_text())
         self.assertEqual(route['spec']['tls']['termination'], 'reencrypt')
         self.assertEqual(route['metadata']['annotations']['haproxy.router.openshift.io/timeout'], '120s')
