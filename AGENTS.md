@@ -128,7 +128,13 @@ oc annotate application "$APP_NAME" -n "${APP_NAME}-dev" argocd.argoproj.io/refr
 oc wait application/"$APP_NAME" -n "${APP_NAME}-dev" --for=jsonpath='{.status.sync.revision}'="$REVISION" --timeout=180s
 oc wait application/"$APP_NAME" -n "${APP_NAME}-dev" --for=jsonpath='{.status.sync.status}'=Synced --timeout=180s
 oc wait application/"$APP_NAME" -n "${APP_NAME}-dev" --for=jsonpath='{.status.health.status}'=Healthy --timeout=300s
+# After a successful build, a mutable :latest tag needs a new pod.
+oc rollout restart deployment/"$APP_NAME" -n "${APP_NAME}-dev"
 oc rollout status deployment/"$APP_NAME" -n "${APP_NAME}-dev" --timeout=180s
+EXPECTED_DIGEST=$(oc get istag "${APP_NAME}:latest" -n "${APP_NAME}-build" -o jsonpath='{.image.metadata.name}')
+oc get pods -n "${APP_NAME}-dev" -l "app.kubernetes.io/name=${APP_NAME}" -o json | \
+  jq -e --arg name "$APP_NAME" --arg digest "$EXPECTED_DIGEST" \
+  '[.items[].status.containerStatuses[] | select(.name==$name)] | length > 0 and all(.[]; .ready and (.imageID | endswith("@"+$digest)))'
 ```
 
 Later change: local build, git push, new PipelineRun (same `oc create -f -`), `oc rollout restart deployment/$APP_NAME -n ${APP_NAME}-dev`.
