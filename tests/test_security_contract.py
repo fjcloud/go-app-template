@@ -34,19 +34,18 @@ class SecurityContract(unittest.TestCase):
         self.assertNotIn('oc create namespace', agents)
 
 class SignalDeskContract(unittest.TestCase):
-    def test_only_oauth_proxy_exposes_the_app(self):
+    def test_public_https_route_reaches_the_app_directly(self):
         spec = yaml.safe_load((ROOT/'deploy/base/deployment.yaml').read_text())['spec']['template']['spec']
         self.assertEqual(spec['serviceAccountName'], 'signal-desk')
-        app, proxy = spec['containers']
-        self.assertIn({'name':'LISTEN_ADDR','value':'127.0.0.1:8080'}, app['env'])
-        self.assertIn('--pass-user-bearer-token=false', proxy['args'])
-        self.assertIn('--pass-access-token=false', proxy['args'])
+        self.assertEqual(len(spec['containers']), 1)
+        app = spec['containers'][0]
+        self.assertIn({'name':'LISTEN_ADDR','value':':8080'}, app['env'])
+        self.assertIn({'name':'http','containerPort':8080}, app['ports'])
         service = yaml.safe_load((ROOT/'deploy/base/service.yaml').read_text())
-        self.assertEqual(service['spec']['ports'], [{'name':'https','port':8443,'targetPort':'oauth'}])
-        certificate = service['metadata']['annotations']['service.beta.openshift.io/serving-cert-secret-name']
-        self.assertEqual(next(v for v in spec['volumes'] if v['name']=='serving-cert')['secret']['secretName'], certificate)
+        self.assertEqual(service['spec']['ports'], [{'name':'http','port':8080,'targetPort':'http'}])
         route = yaml.safe_load((ROOT/'deploy/base/route.yaml').read_text())
-        self.assertEqual(route['spec']['tls']['termination'], 'reencrypt')
+        self.assertEqual(route['spec']['port']['targetPort'], 'http')
+        self.assertEqual(route['spec']['tls'], {'termination':'edge','insecureEdgeTerminationPolicy':'Redirect'})
         self.assertEqual(route['metadata']['annotations']['haproxy.router.openshift.io/timeout'], '120s')
 
     def test_local_model_needs_no_runtime_api_key(self):
@@ -55,7 +54,7 @@ class SignalDeskContract(unittest.TestCase):
         app = spec['containers'][0]
         self.assertEqual(app['envFrom'], [{'configMapRef': {'name': 'signal-desk-config'}}])
         self.assertNotIn('OPENAI_API_KEY', {e['name'] for e in app['env']})
-        self.assertTrue(all(p['httpGet']['scheme']=='HTTPS' and p['httpGet']['port']==8443 for n,p in app.items() if n.endswith('Probe')))
+        self.assertTrue(all(p['httpGet']['scheme']=='HTTP' and p['httpGet']['port']=='http' for n,p in app.items() if n.endswith('Probe')))
 
     def test_persistent_data_and_backend_only_provider_key(self):
         deployment = yaml.safe_load((ROOT/'deploy/base/deployment.yaml').read_text())['spec']

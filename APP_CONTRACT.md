@@ -52,10 +52,10 @@ Reuse the reference JSON contracts:
 | `POST /api/game/play` | Validate `round_id`, `memo_version`, positions with `article_id`, `idea_id`, `amount`; freeze before prices |
 | `POST /api/game/settle` | Refresh frozen valuation |
 | `POST /api/game/reset` | Retain prior round, start again |
-| `/mcp` | Authenticated read-only Streamable HTTP: `list_news`, `read_archive`, `search_archive`, `index_universe`. No prices, positions, mutation or credentials. |
+| `/mcp` | Public read-only Streamable HTTP: `list_news`, `read_archive`, `search_archive`, `index_universe`. No prices, positions, mutation or credentials. |
 
 ## Platform and acceptance
 
-Keep technical APP_NAME `signal-desk`, the `signal-desk` ServiceAccount/ConfigMap, mounted model key, data PVC, OpenShift OAuth proxy, loopback listener and service CA. The public app requires OpenShift login. Traces go to the prepared MLflow `signal-desk` experiment; include model/tool timing and usage, never keys, full news text or portfolio contents. Show the research trace ID.
+Keep technical APP_NAME `signal-desk`, the `signal-desk` ServiceAccount/ConfigMap, mounted model key, data PVC and service CA. Expose the app on `:8080` through its Service and HTTPS edge Route; the app and MCP connector require no login or token. All participants share the same workshop state. Traces go to the prepared MLflow `signal-desk` experiment; include model/tool timing and usage, never keys, full news text or portfolio contents. Show the research trace ID.
 
 Run reference Go race/vet tests. Verify archived-week scope, memo re-scoring, real tool evidence, budget checks, frozen choices before price fetch, completed-session valuation and correct fund arithmetic. Test errors and missing data. Verify the English page on mobile. Distinguish fixture tests from actual model/cluster tests. Follow AGENTS.md for Git → Tekton → Argo CD and verify the matching pushed revision, not just an older healthy app.
