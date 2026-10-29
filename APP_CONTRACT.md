@@ -21,11 +21,11 @@ The prepared ConfigMap supplies all endpoint/model values. Never invent a URL or
 | Purpose | Endpoint and model | Contract |
 | --- | --- | --- |
 | Relevance | `DECISION_URL=http://d3-mini.decision-serving.svc.cluster.local:8080/v1/systemone`, `DECISION_MODEL=vllm-sr/d3-mini` | Native System One JSON. `state` contains memo and archived source facts; question `opportunity` has `type:score`, five ordered criteria 0–4, `require_full_input:true`. Validate complete coverage, the five probabilities and expected score; display `score / 4 × 100`. No generated explanation replaces this result. |
-| Research agent | `AGENT_URL=http://lsd-genai-playground-service.live-transcript-dev.svc.cluster.local:8321/v1`, `AGENT_MODEL=maas-vllm-inference-1/deepseekv4pro` | Native OpenShift AI `POST /responses`, `store:false`, bounded function-tool loop. Read `AGENT_KEY_FILE` and send `X-OGX-Provider-Data: {"vllm_api_token":"<runtime MaaS key>"}`. Use the reference client; no direct Azure call or provider key. |
+| Research agent | `AGENT_URL=http://lsd-genai-playground-service.signal-desk-dev.svc.cluster.local:8321/v1`, `AGENT_MODEL=maas-vllm-inference-1/deepseekv4pro` | Native OpenShift AI `POST /responses`, `store:false`, bounded function-tool loop. Read `AGENT_KEY_FILE` and send `X-OGX-Provider-Data: {"vllm_api_token":"<runtime MaaS key>"}`. Use the reference client; no direct Azure call or provider key. |
 
-The developer preflight uses `https://d3-api.decision-serving.svc.cluster.local:8443/v1/systemone` with a scoped OpenShift Bearer token. That endpoint adds authorization to the same native protocol; it is not MaaS. The runtime table above intentionally uses the existing internal app path. Preserve the platform ConfigMap; never hardcode a developer token or send the MaaS key to D3.
+The developer and runtime both call the internal D3 service directly, with no API key or authentication proxy. DeepSeek uses its separate MaaS credential. Preserve the model endpoints supplied by the platform ConfigMap.
 
-D3 is a community decision model, not a RedHatAI or supported Red Hat AI Inference model/runtime. Its score is **relevance/materiality**, not confidence, bullishness, probability of profit or expected return. Both positive and negative catalysts can score highly. Never replace failed inference with a keyword rule.
+D3 is a decision model from vLLM Semantic Router. Its score is **relevance/materiality**, not confidence, bullishness, probability of profit or expected return. Both positive and negative catalysts can score highly. Never replace failed inference with a keyword rule.
 
 ## Evidence and replay rules
 
@@ -56,6 +56,6 @@ Reuse the reference JSON contracts:
 
 ## Platform and acceptance
 
-Keep technical APP_NAME `live-transcript`, the `signal-desk` ServiceAccount/ConfigMap, mounted model key, data PVC, OpenShift OAuth proxy, loopback listener and service CA. The public app requires OpenShift login. Traces go to the prepared MLflow `signal-desk` experiment; include model/tool timing and usage, never keys, full news text or portfolio contents. Show the research trace ID.
+Keep technical APP_NAME `signal-desk`, the `signal-desk` ServiceAccount/ConfigMap, mounted model key, data PVC, OpenShift OAuth proxy, loopback listener and service CA. The public app requires OpenShift login. Traces go to the prepared MLflow `signal-desk` experiment; include model/tool timing and usage, never keys, full news text or portfolio contents. Show the research trace ID.
 
 Run reference Go race/vet tests. Verify archived-week scope, memo re-scoring, real tool evidence, budget checks, frozen choices before price fetch, completed-session valuation and correct fund arithmetic. Test errors and missing data. Verify the English page on mobile. Distinguish fixture tests from actual model/cluster tests. Follow AGENTS.md for Git → Tekton → Argo CD and verify the matching pushed revision, not just an older healthy app.

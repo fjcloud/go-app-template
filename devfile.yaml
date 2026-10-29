@@ -1,6 +1,6 @@
 schemaVersion: 2.2.2
 metadata:
-  name: live-transcript-workspace
+  name: signal-desk-workspace
   description: 'Signal Desk: archived news, local relevance scoring and a paper-investment game'
 attributes:
   controller.devfile.io/storage-type: per-user
@@ -17,7 +17,7 @@ components:
         - name: SHELL
           value: /bin/bash
         - name: APP_NAME
-          value: live-transcript
+          value: signal-desk
         - name: GIT_SERVER
           value: https://gitpop.apps.sno.msl.cloud
         # Keep /injected-tools/bin first so the Dev Spaces AI injector stays on PATH.
