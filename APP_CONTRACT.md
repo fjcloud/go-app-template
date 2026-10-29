@@ -1,16 +1,15 @@
 # Signal Desk — app contract
 
-Build one simple English Go web app: **last week's news → memo relevance → index ideas → virtual allocation → this week's result**. Reuse the complete [Go reference](https://github.com/fjcloud/aro-ai-app-platform/tree/main/examples/briefing-desk), including its tests and web assets. AGENTS.md supplies delivery rules; preserve the prepared scaffold.
+Build one simple English Go web app: **repository news snapshot → memo relevance → index ideas → virtual allocation → latest market result**. Reuse the complete [Go reference](https://github.com/fjcloud/aro-ai-app-platform/tree/main/examples/briefing-desk), including its tests and web assets. AGENTS.md supplies delivery rules; preserve the prepared scaffold.
 
 ## User flow
 
 1. Edit a fund memo (default: semiconductors and electronic components).
-2. Load the previous Monday–Sunday from Techmeme archives, rank every collected primary story and show the imported/ranked counts. Export all collected news and coverage gaps as JSON. Initially show 30 stories with Show more.
-   If cloud requests are blocked, offer **Import news** for a same-week Signal Desk JSON export. Validate dates/source URLs and label manual provenance. Ignore uploaded scores, research and portfolio data; score archived facts using the server model.
+2. Load `news/techmeme.json`, bundled from the Go reference with `go:embed`. It contains 161 dated Techmeme headlines/excerpts from 26–28 October 2026, captured on 29 October. Rank every saved article and show loaded/ranked counts. Export the corpus and provenance as JSON. Initially show 30 stories with Show more. The normal flow must not contact Techmeme or require manual import. Preserve the recorded information cutoff and source links.
 3. Open a story and find up to three hypothetical long-only ETF ideas (QQQ, SPY, SMH or XLK), with a short thesis, risk and actual source evidence. No supported exposure is a valid outcome.
 4. Allocate a virtual **$10,000** across selected ideas. No result or future price is shown yet.
-5. Reveal: persist and freeze the entire portfolio before requesting historical prices. Entry is the first available US session open after the news week; exit is the latest completed US session close this week. Show dates, source prices, position P&L and total fund value including uninvested cash.
-6. Label unfinished weeks **Week in progress**. Refresh valuation without altering choices. Play again creates a fresh budget and retains previous rounds.
+5. Reveal: persist and freeze the entire portfolio before requesting historical prices. Entry is the first US session open after the fixed snapshot cutoff (29 October 2026 at 00:05 America/New_York); valuation is the latest available regular-market quote, including intraday or delayed quotes. Keep the news fixed across calendar weeks. Show dates, source prices, position P&L and total fund value including uninvested cash.
+6. Show the actual quote timestamp and **Latest available market quote**. Update result fetches a fresh quote without altering choices. Play again creates a fresh budget and retains previous rounds.
 
 Keep one column: collapsible memo, portfolio, ranked news. Show loading/progress and errors; preserve unsaved memo edits during polling. No ticker dashboard, microphone or real trades.
 
@@ -29,9 +28,9 @@ D3 is a decision model from vLLM Semantic Router. Its score is **relevance/mater
 
 ## Evidence and replay rules
 
-- Archive week/cutoff uses `America/New_York`. Use archived Techmeme snapshots and backfill missing primary post IDs; deduplicate publisher URLs. Disclose unavailable IDs and excerpt-only coverage. Do not fetch today's publisher article to enrich past facts.
+- Use the embedded, dated repository snapshot with its `America/New_York` cutoff. Do not roll it to another week or fetch publisher pages. Retain collection provenance, deduplicated publisher links and excerpt-only coverage. Copy `news/` with the Go source; never invent a replacement dataset.
 - Game research tools: `read_archive(source_id)`, `search_archive(query)`, `index_universe()`. Resolve source IDs server-side, validate citations and cap calls/turns. No current-web, arbitrary URL, shell, price, return or order tool is available to this agent.
-- Historical Yahoo daily prices are fetched by deterministic Go code after commitment. Validate symbol/currency, sessions, ordering and positive prices; exclude current incomplete/future bars. Report missing prices or unsupported split accounting instead of inventing data. Retrying a valuation cannot change the frozen portfolio.
+- Yahoo entry-session opens and latest regular-market quotes are fetched by deterministic Go code after commitment. Validate symbol/currency, ordered sessions, positive prices and quote timestamps. Entry must follow the news cutoff. Never substitute an incomplete daily close for the latest quote, or invent a future quote. Report missing prices or unsupported split accounting instead of inventing data. Retrying a valuation cannot change the frozen portfolio.
 - Gross price-only P&L: `amount × (exit / entry − 1)`; fund value is `$10,000 + sum(P&L)`. Exclude dividends, fees and slippage explicitly. No price targets or calibrated return forecasts.
 - This is an educational historical replay. A tool cutoff does not erase model training knowledge: never call it a blind backtest.
 - Cache scores/ideas by memo version and source-summary hash. Memo edits re-score saved news and invalidate old ideas. Persist documents, snapshots and rounds atomically under `DATA_DIR`.
@@ -44,7 +43,7 @@ Reuse the reference JSON contracts:
 | --- | --- |
 | `GET /healthz` | `{"status":"ok"}` |
 | `GET /api/game` | Week, memo, news, ranking progress, ideas and current round |
-| `POST /api/game/load` | Start/resume archive import and scoring |
+| `POST /api/game/load` | Load the bundled repository news and start/resume scoring |
 | `POST /api/game/import` | Import a bounded same-week JSON news export and rank its archived facts |
 | `GET /api/game/export` | Full collected corpus and disclosed coverage gaps |
 | `POST /api/profiles` | Save fund memo and re-score |
@@ -58,4 +57,4 @@ Reuse the reference JSON contracts:
 
 Keep technical APP_NAME `signal-desk`, the `signal-desk` ServiceAccount/ConfigMap, mounted model key, data PVC and service CA. Expose the app on `:8080` through its Service and HTTPS edge Route; the app and MCP connector require no login or token. All participants share the same workshop state. Traces go to the prepared MLflow `signal-desk` experiment; include model/tool timing and usage, never keys, full news text or portfolio contents. Show the research trace ID.
 
-Run reference Go race/vet tests. Verify archived-week scope, memo re-scoring, real tool evidence, budget checks, frozen choices before price fetch, completed-session valuation and correct fund arithmetic. Test errors and missing data. Verify the English page on mobile. Distinguish fixture tests from actual model/cluster tests. Follow AGENTS.md for Git → Tekton → Argo CD and verify the matching pushed revision, not just an older healthy app.
+Run reference Go race/vet tests. Verify archived-week scope, memo re-scoring, real tool evidence, budget checks, frozen choices before price fetch, timestamped latest-quote valuation and correct fund arithmetic. Test errors and missing data. Verify the English page on mobile. Distinguish fixture tests from actual model/cluster tests. Follow AGENTS.md for Git → Tekton → Argo CD and verify the matching pushed revision, not just an older healthy app.
