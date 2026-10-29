@@ -33,25 +33,36 @@ class SecurityContract(unittest.TestCase):
         self.assertNotIn('privileged: true', agents)
         self.assertNotIn('oc create namespace', agents)
 
-class ClusterVoiceContract(unittest.TestCase):
+class SignalDeskContract(unittest.TestCase):
     def test_only_oauth_proxy_exposes_the_app(self):
         spec = yaml.safe_load((ROOT/'deploy/base/deployment.yaml').read_text())['spec']['template']['spec']
-        self.assertEqual(spec['serviceAccountName'], 'cluster-voice')
+        self.assertEqual(spec['serviceAccountName'], 'signal-desk')
         app, proxy = spec['containers']
         self.assertIn({'name':'LISTEN_ADDR','value':'127.0.0.1:8080'}, app['env'])
         self.assertIn('--pass-user-bearer-token=false', proxy['args'])
         self.assertIn('--pass-access-token=false', proxy['args'])
         service = yaml.safe_load((ROOT/'deploy/base/service.yaml').read_text())
         self.assertEqual(service['spec']['ports'], [{'name':'https','port':8443,'targetPort':'oauth'}])
+        certificate = service['metadata']['annotations']['service.beta.openshift.io/serving-cert-secret-name']
+        self.assertEqual(next(v for v in spec['volumes'] if v['name']=='serving-cert')['secret']['secretName'], certificate)
         route = yaml.safe_load((ROOT/'deploy/base/route.yaml').read_text())
         self.assertEqual(route['spec']['tls']['termination'], 'reencrypt')
         self.assertEqual(route['metadata']['annotations']['haproxy.router.openshift.io/timeout'], '120s')
 
-    def test_runtime_key_is_mounted_and_never_a_literal(self):
+    def test_local_model_needs_no_runtime_api_key(self):
         spec = yaml.safe_load((ROOT/'deploy/base/deployment.yaml').read_text())['spec']['template']['spec']
-        volume = next(v for v in spec['volumes'] if v['name']=='runtime-model')
-        self.assertEqual(volume['secret']['secretName'], 'cluster-voice-model')
+        self.assertNotIn('runtime-model', {v['name'] for v in spec['volumes']})
         app = spec['containers'][0]
+        self.assertEqual(app['envFrom'], [{'configMapRef': {'name': 'signal-desk-config'}}])
         self.assertNotIn('OPENAI_API_KEY', {e['name'] for e in app['env']})
-        self.assertTrue(next(v for v in app['volumeMounts'] if v['name']=='runtime-model')['readOnly'])
         self.assertTrue(all(p['httpGet']['scheme']=='HTTPS' and p['httpGet']['port']==8443 for n,p in app.items() if n.endswith('Probe')))
+
+    def test_persistent_data_and_backend_only_provider_key(self):
+        deployment = yaml.safe_load((ROOT/'deploy/base/deployment.yaml').read_text())['spec']
+        self.assertEqual(deployment['strategy']['type'], 'Recreate')
+        spec = deployment['template']['spec']
+        volumes = {v['name']: v for v in spec['volumes']}
+        self.assertEqual(volumes['data']['persistentVolumeClaim']['claimName'], 'signal-desk-data')
+        self.assertEqual(volumes['model']['secret']['secretName'], 'signal-desk-model')
+        mounts = spec['containers'][0]['volumeMounts']
+        self.assertTrue(next(m for m in mounts if m['name']=='model')['readOnly'])
