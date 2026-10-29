@@ -30,7 +30,7 @@ spec:
             name: signal-desk-config
         env:
         - name: LISTEN_ADDR
-          value: 127.0.0.1:8080
+          value: :8080
         - name: SERVICE_CA_FILE
           value: /etc/service-ca/service-ca.crt
         - name: DATA_DIR
@@ -51,7 +51,8 @@ spec:
           mountPath: /etc/model
           readOnly: true
         ports:
-        - containerPort: 8080
+        - name: http
+          containerPort: 8080
         resources:
           requests:
             cpu: 50m
@@ -62,61 +63,17 @@ spec:
         livenessProbe:
           httpGet:
             path: /healthz
-            port: 8443
-            scheme: HTTPS
+            port: http
+            scheme: HTTP
           initialDelaySeconds: 5
           periodSeconds: 10
         readinessProbe:
           httpGet:
             path: /healthz
-            port: 8443
-            scheme: HTTPS
+            port: http
+            scheme: HTTP
           initialDelaySeconds: 3
           periodSeconds: 5
-        securityContext:
-          allowPrivilegeEscalation: false
-          runAsNonRoot: true
-          capabilities:
-            drop:
-            - ALL
-      - name: oauth-proxy
-        image: image-registry.openshift-image-registry.svc:5000/signal-desk-dev/signal-desk-oauth:current
-        imagePullPolicy: Always
-        args:
-        - --provider=openshift
-        - --https-address=:8443
-        - --http-address=
-        - --upstream=http://127.0.0.1:8080
-        - --openshift-service-account=signal-desk
-        - --openshift-sar={"namespace":"signal-desk-dev","resource":"services","resourceName":"signal-desk","verb":"get"}
-        - --openshift-delegate-urls={"/":{"namespace":"signal-desk-dev","resource":"services","name":"signal-desk","verb":"get"}}
-        - --tls-cert=/etc/tls/tls.crt
-        - --tls-key=/etc/tls/tls.key
-        - --cookie-secret-file=/etc/oauth/cookie-secret
-        - --cookie-samesite=lax
-        - --cookie-expire=8h
-        - --skip-auth-regex=^/healthz$
-        - --pass-access-token=false
-        - --pass-user-bearer-token=false
-        - --pass-basic-auth=false
-        - --request-logging=false
-        ports:
-        - name: oauth
-          containerPort: 8443
-        volumeMounts:
-        - name: serving-cert
-          mountPath: /etc/tls
-          readOnly: true
-        - name: oauth-cookie
-          mountPath: /etc/oauth
-          readOnly: true
-        resources:
-          requests:
-            cpu: 10m
-            memory: 32Mi
-          limits:
-            cpu: 200m
-            memory: 128Mi
         securityContext:
           allowPrivilegeEscalation: false
           runAsNonRoot: true
@@ -127,12 +84,6 @@ spec:
       - name: service-ca
         configMap:
           name: signal-desk-service-ca
-      - name: serving-cert
-        secret:
-          secretName: signal-desk-tls
-      - name: oauth-cookie
-        secret:
-          secretName: signal-desk-oauth
       - name: data
         persistentVolumeClaim:
           claimName: signal-desk-data

@@ -11,7 +11,7 @@ spec:
     kind: Service
     name: signal-desk
   port:
-    targetPort: https
+    targetPort: http
   tls:
-    termination: reencrypt
+    termination: edge
     insecureEdgeTerminationPolicy: Redirect

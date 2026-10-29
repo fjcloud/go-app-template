@@ -24,7 +24,7 @@ requested feature locally and test it.
 
 ## Generate
 
-`main.go` — HTTP on `$LISTEN_ADDR` (default `:8080`, `127.0.0.1:8080` behind the prepared OAuth proxy), `GET /`, `GET /healthz` → `{"status":"ok"}`
+`main.go` — HTTP on `$LISTEN_ADDR` (default `:8080`, exposed by the prepared Service and HTTPS Route), `GET /`, `GET /healthz` → `{"status":"ok"}`
 `go.mod` — `module <app-name>` / `go 1.24.0`
 
 Dockerfile (exact; go-toolset cannot write to `/app`):
@@ -141,7 +141,7 @@ Later change: local build, git push, new PipelineRun (same `oc create -f -`), `o
 
 ## OpenShift
 
-Deployment: app requests 50m/64Mi, limits 500m/512Mi, HTTPS probes `/healthz:8443` through the OAuth proxy, `runAsNonRoot` + drop ALL, no `runAsUser`, no Route `spec.host`, TLS reencrypt + Redirect. Keep the OAuth proxy, loopback app listener, service CA mounts, service CA and signal-desk ServiceAccount intact. The platform supplies these; never grant monitoring permissions yourself.
+Deployment: app requests 50m/64Mi, limits 500m/512Mi, HTTP probes `/healthz:8080` directly to the app, `runAsNonRoot` + drop ALL, no `runAsUser`, no Route `spec.host`, TLS edge + Redirect. The public app and read-only MCP endpoint require no login. Keep the service CA mounts and signal-desk ServiceAccount for backend model/tracing access. The platform supplies these; never grant monitoring permissions yourself.
 
 ## Signal Desk
 
@@ -152,7 +152,7 @@ rules, then implement the requested UI change. Do not replace the prepared scaff
 or copy the workshop's platform scripts into this app. Keep technical APP_NAME
 signal-desk. App UI, research and errors must be in English.
 
-The platform injects signal-desk-config, a mounted model key, OAuth and storage.
+The platform injects signal-desk-config, a mounted model key and storage.
 Use the fixed native Responses and local decision APIs from that config. No Azure
 credentials, API keys in source, direct browser inference or heuristic fallback.
 Run go test -race ./... and go vet ./... before shipping. Chromium, if available,
