@@ -150,7 +150,7 @@ https://github.com/fjcloud/aro-ai-app-platform/tree/main/examples/briefing-desk
 (all Go source/tests, go.mod/go.sum and web/). Reuse its tested clients and replay
 rules, then implement the requested UI change. Do not replace the prepared scaffold
 or copy the workshop's platform scripts into this app. Keep technical APP_NAME
-live-transcript. App UI, research and errors must be in English.
+signal-desk. App UI, research and errors must be in English.
 
 The platform injects signal-desk-config, a mounted model key, OAuth and storage.
 Use the fixed native Responses and local decision APIs from that config. No Azure

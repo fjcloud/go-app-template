@@ -1,15 +1,15 @@
 apiVersion: route.openshift.io/v1
 kind: Route
 metadata:
-  name: live-transcript
+  name: signal-desk
   annotations:
     haproxy.router.openshift.io/timeout: 120s
   labels:
-    app.kubernetes.io/name: live-transcript
+    app.kubernetes.io/name: signal-desk
 spec:
   to:
     kind: Service
-    name: live-transcript
+    name: signal-desk
   port:
     targetPort: https
   tls:

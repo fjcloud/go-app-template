@@ -1,20 +1,20 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: live-transcript
+  name: signal-desk
   labels:
-    app.kubernetes.io/name: live-transcript
+    app.kubernetes.io/name: signal-desk
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app.kubernetes.io/name: live-transcript
+      app.kubernetes.io/name: signal-desk
   template:
     metadata:
       annotations:
         openshift.io/required-scc: restricted-v2
       labels:
-        app.kubernetes.io/name: live-transcript
+        app.kubernetes.io/name: signal-desk
     spec:
       serviceAccountName: signal-desk
       securityContext:
@@ -22,8 +22,8 @@ spec:
         seccompProfile:
           type: RuntimeDefault
       containers:
-      - name: live-transcript
-        image: image-registry.openshift-image-registry.svc:5000/live-transcript-build/live-transcript:latest
+      - name: signal-desk
+        image: image-registry.openshift-image-registry.svc:5000/signal-desk-build/signal-desk:latest
         imagePullPolicy: Always
         envFrom:
         - configMapRef:
@@ -36,7 +36,7 @@ spec:
         - name: DATA_DIR
           value: /data
         - name: AGENT_URL
-          value: http://lsd-genai-playground-service.live-transcript-dev.svc.cluster.local:8321/v1
+          value: http://lsd-genai-playground-service.signal-desk-dev.svc.cluster.local:8321/v1
         - name: AGENT_MODEL
           value: maas-vllm-inference-1/deepseekv4pro
         - name: AGENT_KEY_FILE
@@ -80,7 +80,7 @@ spec:
             drop:
             - ALL
       - name: oauth-proxy
-        image: image-registry.openshift-image-registry.svc:5000/live-transcript-dev/signal-desk-oauth:current
+        image: image-registry.openshift-image-registry.svc:5000/signal-desk-dev/signal-desk-oauth:current
         imagePullPolicy: Always
         args:
         - --provider=openshift
@@ -88,8 +88,8 @@ spec:
         - --http-address=
         - --upstream=http://127.0.0.1:8080
         - --openshift-service-account=signal-desk
-        - --openshift-sar={"namespace":"live-transcript-dev","resource":"services","resourceName":"live-transcript","verb":"get"}
-        - --openshift-delegate-urls={"/":{"namespace":"live-transcript-dev","resource":"services","name":"live-transcript","verb":"get"}}
+        - --openshift-sar={"namespace":"signal-desk-dev","resource":"services","resourceName":"signal-desk","verb":"get"}
+        - --openshift-delegate-urls={"/":{"namespace":"signal-desk-dev","resource":"services","name":"signal-desk","verb":"get"}}
         - --tls-cert=/etc/tls/tls.crt
         - --tls-key=/etc/tls/tls.key
         - --cookie-secret-file=/etc/oauth/cookie-secret
