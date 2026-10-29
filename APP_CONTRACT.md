@@ -1,6 +1,6 @@
 # Signal Desk — app contract
 
-Build one simple English Go web app: **last week's news → memo relevance → index ideas → virtual allocation → this week's result**. Reuse the complete [Go reference](https://github.com/fjcloud/aro-ai-app-platform/tree/feature/briefing-desk/examples/briefing-desk), including its tests and web assets. AGENTS.md supplies delivery rules; preserve the prepared scaffold.
+Build one simple English Go web app: **last week's news → memo relevance → index ideas → virtual allocation → this week's result**. Reuse the complete [Go reference](https://github.com/fjcloud/aro-ai-app-platform/tree/main/examples/briefing-desk), including its tests and web assets. AGENTS.md supplies delivery rules; preserve the prepared scaffold.
 
 ## User flow
 

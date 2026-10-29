@@ -13,4 +13,4 @@ d3-mini ranks memo relevance; DeepSeek proposes hypothetical ETF exposures. A sc
 
 Read [APP_CONTRACT.md](APP_CONTRACT.md) for the app behavior and fixed model APIs.
 
-Keep the prepared OAuth, restricted-v2, storage and Git → Tekton → Argo CD contract in AGENTS.md. The working Go reference and local setup are in [the workshop repository](https://github.com/fjcloud/aro-ai-app-platform/tree/feature/briefing-desk/examples/briefing-desk).
+Keep the prepared OAuth, restricted-v2, storage and Git → Tekton → Argo CD contract in AGENTS.md. The working Go reference and local setup are in [the workshop repository](https://github.com/fjcloud/aro-ai-app-platform/tree/main/examples/briefing-desk).

@@ -11,7 +11,7 @@ GitHub HTML pages: it loses files and fills the model context with source text.
 
 ```sh
 REFERENCE_DIR=$(mktemp -d)
-git clone --depth 1 --branch feature/briefing-desk \
+git clone --depth 1 --branch main \
   https://github.com/fjcloud/aro-ai-app-platform.git "$REFERENCE_DIR/workshop"
 cp "$REFERENCE_DIR/workshop/examples/briefing-desk/"*.go .
 cp "$REFERENCE_DIR/workshop/examples/briefing-desk/"go.{mod,sum} .
@@ -146,7 +146,7 @@ Deployment: app requests 50m/64Mi, limits 500m/512Mi, HTTPS probes `/healthz:844
 ## Signal Desk
 
 Read APP_CONTRACT.md before planning or coding. Use the complete Go reference at
-https://github.com/fjcloud/aro-ai-app-platform/tree/feature/briefing-desk/examples/briefing-desk
+https://github.com/fjcloud/aro-ai-app-platform/tree/main/examples/briefing-desk
 (all Go source/tests, go.mod/go.sum and web/). Reuse its tested clients and replay
 rules, then implement the requested UI change. Do not replace the prepared scaffold
 or copy the workshop's platform scripts into this app. Keep technical APP_NAME
