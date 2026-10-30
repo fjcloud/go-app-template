@@ -5,13 +5,13 @@ Build one simple English Go web app: **repository news snapshot → memo relevan
 ## User flow
 
 1. Edit a fund memo (default: semiconductors and electronic components).
-2. Load `news/techmeme.json`, bundled from the Go reference with `go:embed`. It contains 161 dated Techmeme headlines/excerpts from 26–28 October 2026, captured on 29 October. Rank every saved article and show loaded/ranked counts. Export the corpus and provenance as JSON. Initially show 30 stories with Show more. The normal flow must not contact Techmeme or require manual import. Preserve the recorded information cutoff and source links.
+2. Load `news/techmeme.json`, bundled from the Go reference with `go:embed`. It contains 161 dated Techmeme headlines/excerpts from 26–28 October 2026, captured on 29 October. Rank every saved article and show loaded/ranked counts. Export the corpus and provenance as JSON. Initially show three stories; More stories adds three at a time. Include the existing High relevance only filter. The normal flow must not contact Techmeme or require manual import. Preserve the recorded information cutoff and source links.
 3. Open a story and research up to three individual company stocks: the named business and, where supported, its suppliers, customers or competitors. Verify each ticker, company name and exchange with `search_companies`; ETFs, funds and indices are excluded. Show the relationship, specific catalyst, archived evidence and concrete risk. Related stocks do not automatically move together. An empty idea list is valid when evidence is insufficient.
 4. Allocate a virtual **$10,000** across selected ideas. No result or future price is shown yet.
 5. Reveal: persist and freeze the entire portfolio before requesting historical prices. Entry is each stock exchange’s first session open after the fixed snapshot cutoff (29 October 2026 at 00:05 America/New_York); valuation is the latest available regular-market quote, including intraday or delayed quotes. Keep the news fixed across calendar weeks. Show dates, source prices, position P&L and total fund value including uninvested cash.
-6. Show the actual quote timestamp and **Latest available market quote**. Update result fetches a fresh quote without altering choices. Play again creates a fresh budget and retains previous rounds.
+6. Show the actual quote timestamp and **Latest available market quote**. Update result fetches a fresh quote without altering choices. Try another story creates a fresh budget and retains previous rounds.
 
-Keep one column: collapsible memo, portfolio, ranked news. Show loading/progress and errors; preserve unsaved memo edits during polling. No ticker dashboard, microphone or real trades.
+Keep one column: a collapsed fund memo, three news cards, compact company choices and then the paper result. Hide the empty portfolio. Use amount presets and retain custom amounts. Put full theses, risks and source citations under Show reasoning & sources; keep a short opportunity/risk on each company card. Put prices and FX under Prices & calculation. Preserve complete information in the disclosures. Use Reveal result for the frozen-market comparison. Show loading/progress and errors; preserve unsaved memo edits during polling. No ticker dashboard, microphone or real trades.
 
 ## Fixed model APIs — backend only
 
@@ -35,6 +35,10 @@ D3 is a decision model from vLLM Semantic Router. Its score is **relevance/mater
 - This is an educational historical replay. A tool cutoff does not erase model training knowledge: never call it a blind backtest.
 - Cache scores/ideas by memo version and source-summary hash. Memo edits re-score saved news and invalidate old ideas. Persist documents, snapshots and rounds atomically under `DATA_DIR`. Version the equities game state so earlier ETF proposals and portfolios cannot be reused as company-share ideas; retain the earlier files.
 
+## Finance research method
+
+Copy `skills/` from the Go reference as well as every Go source file. The app embeds a reviewed adaptation of Anthropic Financial Services `idea-generation` (Apache-2.0, upstream revision `60565064557ca77b12f62aa7877f365d111c129d`). Keep its source, license and attribution files. The method maps a concrete catalyst through the value chain, examines indirect beneficiaries, challenges the thesis and states missing information. It adds no data provider, quantitative screens, target prices, tools or privileges. New proposals and MLflow root spans record its name and upstream revision; old cached research must not be labeled as skill-assisted.
+
 ## Small app API
 
 Reuse the reference JSON contracts:
@@ -55,6 +59,6 @@ Reuse the reference JSON contracts:
 
 ## Platform and acceptance
 
-Keep technical APP_NAME `signal-desk`, the `signal-desk` ServiceAccount/ConfigMap, mounted model key, data PVC and service CA. Expose the app on `:8080` through its Service and HTTPS edge Route; the app and MCP connector require no login or token. All participants share the same workshop state. Traces go to the prepared MLflow `signal-desk` experiment; include model/tool timing and usage, never keys, full news text or portfolio contents. Show the research trace ID.
+Keep technical APP_NAME `signal-desk`, the `signal-desk` ServiceAccount/ConfigMap, mounted model key, data PVC and service CA. Expose the app on `:8080` through its Service and HTTPS edge Route; the app and MCP connector require no login or token. All participants share the same workshop state. Traces go to the prepared MLflow `signal-desk` experiment; include model/tool timing and usage, never keys, full news text or portfolio contents. Show View MLflow trace for each research, using its server-supplied trace_url. Derive the public UI base, experiment and workspace from the existing tracing configuration. Link directly to the trace drawer, including workspace and selectedEvaluationId; do not expose a token or require a new setting. Retain the trace ID if tracing is not configured.
 
 Run reference Go race/vet tests. Verify archived-week scope, memo re-scoring, real tool evidence, budget checks, frozen choices before price fetch, timestamped latest-quote valuation and correct fund arithmetic. Test errors and missing data. Verify the English page on mobile. Distinguish fixture tests from actual model/cluster tests. Follow AGENTS.md for Git → Tekton → Argo CD and verify the matching pushed revision, not just an older healthy app.

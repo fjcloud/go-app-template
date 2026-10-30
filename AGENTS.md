@@ -17,6 +17,7 @@ cp "$REFERENCE_DIR/workshop/examples/briefing-desk/"*.go .
 cp "$REFERENCE_DIR/workshop/examples/briefing-desk/"go.{mod,sum} .
 cp -R "$REFERENCE_DIR/workshop/examples/briefing-desk/web" .
 cp -R "$REFERENCE_DIR/workshop/examples/briefing-desk/news" .
+cp -R "$REFERENCE_DIR/workshop/examples/briefing-desk/skills" .
 ```
 
 Copy only those sources/assets. The existing delivery scaffold and app contract
@@ -148,7 +149,7 @@ Deployment: app requests 50m/64Mi, limits 500m/512Mi, HTTP probes `/healthz:8080
 
 Read APP_CONTRACT.md before planning or coding. Use the complete Go reference at
 https://github.com/fjcloud/aro-ai-app-platform/tree/main/examples/briefing-desk
-(all Go source/tests, go.mod/go.sum, web/ and news/). Reuse its tested clients and replay
+(all Go source/tests, go.mod/go.sum, web/, news/ and skills/). Reuse its tested clients and replay
 rules, then implement the requested UI change. Do not replace the prepared scaffold
 or copy the workshop's platform scripts into this app. Keep technical APP_NAME
 signal-desk. App UI, research and errors must be in English.
