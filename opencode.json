@@ -1,0 +1,26 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "provider": {
+    "deepseek": {
+      "npm": "@ai-sdk/openai-compatible",
+      "name": "DeepSeek-V4 Pro",
+      "options": {
+        "baseURL": "{env:OPENAI_BASE_URL}",
+        "apiKey": "{env:OPENAI_API_KEY}",
+        "chunkTimeout": 120000,
+        "timeout": 600000
+      },
+      "models": {
+        "deepseekv4pro": {
+          "name": "DeepSeek-V4 Pro",
+          "limit": {
+            "context": 131072,
+            "output": 32768
+          }
+        }
+      }
+    }
+  },
+  "model": "deepseek/deepseekv4pro",
+  "autoupdate": false
+}

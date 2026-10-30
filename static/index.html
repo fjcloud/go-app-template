@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Card Scout</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Oxygen,Ubuntu,sans-serif;background:#f5f5f5;color:#222;line-height:1.5;min-height:100vh}
+header{background:#1a1a2e;color:#fff;padding:1rem 1.25rem}
+header h1{font-size:1.4rem;font-weight:600}
+header p{font-size:.85rem;opacity:.8;margin-top:.25rem}
+main{max-width:1200px;margin:0 auto;padding:1.25rem}
+.card{border-radius:8px;box-shadow:0 1px 4px rgba(0,0,0,.1);overflow:hidden}
+.dataset-info{background:#fff;padding:1.25rem;margin-bottom:1.25rem}
+.dataset-info h2{font-size:1.1rem;margin-bottom:.5rem}
+.dataset-info .meta{font-size:.85rem;color:#555;display:flex;flex-wrap:wrap;gap:.75rem}
+.dataset-info .meta span{background:#e8e8e8;padding:.15rem .5rem;border-radius:4px}
+.controls{display:flex;align-items:center;gap:.75rem;margin:1rem 0;flex-wrap:wrap}
+.btn{padding:.5rem 1rem;border:none;border-radius:6px;font-size:.9rem;font-weight:500;cursor:pointer;transition:background .15s}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.btn-primary{background:#16213e;color:#fff}
+.btn-primary:hover:not(:disabled){background:#0f3460}
+.btn-secondary{background:#e0e0e0;color:#333}
+.btn-secondary:hover:not(:disabled){background:#ccc}
+.btn-accent{background:#533483;color:#fff}
+.btn-accent:hover:not(:disabled){background:#3b1f6e}
+.progress-bar{height:6px;background:#e0e0e0;border-radius:3px;margin:1rem 0;overflow:hidden}
+.progress-bar-fill{height:100%;background:#533483;transition:width .3s}
+.status-msg{font-size:.85rem;color:#555;margin-bottom:.5rem}
+.filters{display:flex;gap:.5rem;margin:1rem 0;flex-wrap:wrap}
+.filter-btn{padding:.35rem .75rem;border:1px solid #ccc;border-radius:20px;font-size:.8rem;background:#fff;cursor:pointer;transition:all .15s}
+.filter-btn:hover{background:#e8e8ff}
+.filter-btn.active{background:#16213e;color:#fff;border-color:#16213e}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:1rem;margin:1rem 0}
+.card-cell{background:#fff;border-radius:8px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,.08);display:flex;flex-direction:column}
+.card-cell img{width:100%;height:200px;object-fit:contain;background:#fafafa;border-bottom:1px solid #eee}
+.card-cell .info{padding:.75rem;flex:1;display:flex;flex-direction:column;gap:.3rem}
+.card-cell .name{font-weight:600;font-size:.95rem}
+.card-cell .set{font-size:.8rem;color:#555}
+.card-cell .badge{display:inline-block;padding:.15rem .45rem;border-radius:4px;font-size:.75rem;font-weight:600}
+.badge-rare{background:#f8d7da;color:#721c24}
+.badge-common{background:#d4edda;color:#155724}
+.badge-other{background:#fff3cd;color:#856404}
+.badge-uncertain{background:#e2e3e5;color:#383d41}
+.badge-needs-review{background:#cce5ff;color:#004085}
+.badge-pending{background:#f0f0f0;color:#666}
+.badge-error{background:#f8d7da;color:#721c24}
+.card-cell .actions{margin-top:.5rem}
+.show-more{display:block;margin:1.5rem auto;text-align:center}
+.research-panel{background:#fff;border-radius:8px;padding:1.25rem;margin-top:1.25rem;box-shadow:0 2px 8px rgba(0,0,0,.15)}
+.research-panel h3{font-size:1rem;margin-bottom:.75rem;color:#16213e}
+.research-panel dl{display:grid;grid-template-columns:180px 1fr;gap:.35rem .75rem;font-size:.85rem}
+.research-panel dt{font-weight:600;color:#555}
+.research-panel dd{word-break:break-word}
+.research-panel .trace-link{color:#533483;text-decoration:underline}
+.error-msg{color:#c00;font-size:.85rem}
+.empty-state{text-align:center;padding:2rem;color:#888;font-size:.9rem}
+.loading{text-align:center;padding:2rem;color:#888}
+.spinner{display:inline-block;width:20px;height:20px;border:3px solid #ddd;border-top-color:#533483;border-radius:50%;animation:spin .6s linear infinite;margin-right:.5rem;vertical-align:middle}
+@keyframes spin{to{transform:rotate(360deg)}}
+@media(max-width:600px){.grid{grid-template-columns:1fr}.research-panel dl{grid-template-columns:1fr}.research-panel dt{margin-top:.5rem}}
+</style>
+</head>
+<body>
+<header>
+  <h1>Card Scout</h1>
+  <p id="dataset-desc">Loading dataset…</p>
+</header>
+<main>
+  <section class="dataset-info card" id="dataset-info" hidden>
+    <h2 id="dataset-name"></h2>
+    <div class="meta" id="dataset-meta"></div>
+  </section>
+
+  <div class="controls">
+    <button class="btn btn-primary" id="analyze-btn" disabled>Analyze batch</button>
+    <span class="status-msg" id="status-msg"></span>
+    <div class="progress-bar" id="progress-bar-wrap" hidden>
+      <div class="progress-bar-fill" id="progress-bar-fill" style="width:0%"></div>
+    </div>
+  </div>
+
+  <div class="filters" id="filters" hidden>
+    <button class="filter-btn active" data-filter="all">All</button>
+    <button class="filter-btn" data-filter="rare">Rare</button>
+    <button class="filter-btn" data-filter="review">Needs review</button>
+    <button class="filter-btn" data-filter="other">Other</button>
+  </div>
+
+  <div class="grid" id="grid"></div>
+  <div class="show-more" id="show-more-wrap" hidden>
+    <button class="btn btn-secondary" id="show-more-btn">Show more</button>
+  </div>
+
+  <div id="research-panel-wrap" hidden>
+    <div class="research-panel card" id="research-panel"></div>
+  </div>
+</main>
+
+<script>
+const STATE = {
+  batch: null,
+  filter: 'all',
+  visibleCount: 12,
+  polling: null,
+  researching: false,
+  selectedCardId: null
+};
+
+const $ = s => document.querySelector(s);
+
+async function fetchBatch() {
+  try {
+    const r = await fetch('/api/batch');
+    if (!r.ok) throw new Error('Batch fetch failed: '+r.status);
+    return await r.json();
+  } catch(e) {
+    return null;
+  }
+}
+
+async function startAnalyze() {
+  try {
+    const r = await fetch('/api/batch/analyze', {method:'POST'});
+    if (r.status === 409) return;
+    if (!r.ok) throw new Error('Analyze start failed: '+r.status);
+  } catch(e) {
+    $('#status-msg').textContent = 'Failed to start analysis.';
+  }
+}
+
+function startPolling() {
+  if (STATE.polling) return;
+  STATE.polling = setInterval(async () => {
+    const b = await fetchBatch();
+    if (!b) return;
+    STATE.batch = b;
+    if (!b.running) {
+      clearInterval(STATE.polling);
+      STATE.polling = null;
+    }
+    renderAll();
+  }, 1100);
+}
+
+async function doResearch(itemId) {
+  if (STATE.researching) return;
+  STATE.researching = true;
+  renderAll();
+  try {
+    const r = await fetch('/api/cards/'+itemId+'/research', {method:'POST'});
+    const data = await r.json();
+    if (STATE.batch && STATE.batch.items) {
+      const idx = STATE.batch.items.findIndex(i => i.id === itemId);
+      if (idx >= 0) {
+        if (r.ok) {
+          STATE.batch.items[idx].research = data;
+        } else {
+          STATE.batch.items[idx].research = {_error: data.error || 'Research failed'};
+        }
+      }
+    }
+  } catch(e) {
+    if (STATE.batch && STATE.batch.items) {
+      const idx = STATE.batch.items.findIndex(i => i.id === itemId);
+      if (idx >= 0) STATE.batch.items[idx].research = {_error: 'Network error'};
+    }
+  }
+  STATE.researching = false;
+  renderAll();
+}
+
+function matchesFilter(item, filter) {
+  if (filter === 'all') return true;
+  if (filter === 'rare') return item.kind === 'pokemon_tcg' && item.rarity === 'rare_or_higher';
+  if (filter === 'review') return item.needs_review === true;
+  if (filter === 'other') return item.kind === 'other_card' || item.kind === 'not_a_card';
+  return true;
+}
+
+function fmtNum(v) {
+  if (v === null || v === undefined) return 'Unavailable';
+  if (v === 0) return '0';
+  return v.toFixed(2);
+}
+
+function fmtRarityLabel(rarity) {
+  if (!rarity) return '—';
+  return rarity.replace(/_/g,' ');
+}
+
+function fmtBadge(item) {
+  if (item.status === 'pending' || item.status === 'analyzing') {
+    return `<span class="badge badge-pending">${item.status}</span>`;
+  }
+  if (item.status === 'error') {
+    return `<span class="badge badge-error">Error</span>`;
+  }
+  if (item.needs_review) {
+    return `<span class="badge badge-needs-review">Needs review</span>`;
+  }
+  const k = item.kind;
+  const r = item.rarity;
+  if (k === 'pokemon_tcg' && r === 'rare_or_higher') {
+    return `<span class="badge badge-rare">Rare</span>`;
+  }
+  if (k === 'pokemon_tcg' && (r === 'common' || r === 'uncommon')) {
+    return `<span class="badge badge-common">${fmtRarityLabel(r)}</span>`;
+  }
+  if (k === 'other_card' || k === 'not_a_card') {
+    return `<span class="badge badge-other">${k.replace(/_/g,' ')}</span>`;
+  }
+  if (k === 'uncertain' || r === 'uncertain') {
+    return `<span class="badge badge-uncertain">Uncertain</span>`;
+  }
+  return `<span class="badge badge-uncertain">${k||'—'} ${fmtRarityLabel(r)}</span>`;
+}
+
+function renderAll() {
+  const b = STATE.batch;
+  if (!b || !b.dataset) {
+    $('#dataset-desc').textContent = 'Loading dataset…';
+    $('#dataset-info').hidden = true;
+    $('#filters').hidden = true;
+    $('#grid').innerHTML = '<div class="loading"><span class="spinner"></span>Loading…</div>';
+    return;
+  }
+
+  const ds = b.dataset;
+  $('#dataset-desc').textContent = ds.name + ' — ' + ds.items + ' items, ' + ds.pokemon_cards + ' Pokémon cards, ' + ds.controls + ' controls, ' + ds.years;
+  $('#dataset-name').textContent = ds.name;
+  $('#dataset-meta').innerHTML =
+    `<span>${ds.items} items</span><span>${ds.pokemon_cards} Pokémon</span><span>${ds.controls} controls</span><span>${ds.years}</span>` +
+    (ds.identity_method ? `<span>${ds.identity_method}</span>` : '');
+  if (ds.snapshot_at) {
+    $('#dataset-meta').innerHTML += `<span>Snapshot: ${new Date(ds.snapshot_at).toLocaleString()}</span>`;
+  }
+  $('#dataset-info').hidden = false;
+
+  const running = b.running;
+  const completed = b.completed || 0;
+  const total = b.items ? b.items.length : (ds.items || 0);
+  const progressPct = total > 0 ? Math.round((completed/total)*100) : 0;
+
+  $('#analyze-btn').disabled = running || STATE.researching;
+  if (running) {
+    $('#status-msg').textContent = `Analyzing… ${completed}/${total}`;
+    $('#progress-bar-wrap').hidden = false;
+    $('#progress-bar-fill').style.width = progressPct+'%';
+    startPolling();
+  } else {
+    $('#status-msg').textContent = completed === 0 && total > 0 ? 'Ready. Click Analyze batch to start.' : `Complete: ${completed}/${total}` + (b.failed ? ` (${b.failed} failed)` : '');
+    $('#progress-bar-wrap').hidden = true;
+  }
+
+  if (!running && total > 0 && completed === 0) {
+    startPolling();
+  }
+
+  const items = b.items || [];
+  const filtered = items.filter(i => matchesFilter(i, STATE.filter));
+  const visible = filtered.slice(0, STATE.visibleCount);
+  const hasMore = filtered.length > STATE.visibleCount;
+
+  $('#filters').hidden = filtered.length === 0 && !running;
+  document.querySelectorAll('.filter-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.filter === STATE.filter);
+    const cnt = items.filter(i => matchesFilter(i, btn.dataset.filter)).length;
+    let label = btn.dataset.filter === 'all' ? 'All' :
+      btn.dataset.filter === 'rare' ? 'Rare' :
+      btn.dataset.filter === 'review' ? 'Needs review' : 'Other';
+    btn.textContent = label + ' (' + cnt + ')';
+  });
+
+  if (visible.length === 0 && filtered.length === 0) {
+    $('#grid').innerHTML = '<div class="empty-state">No cards match this filter.</div>';
+    $('#show-more-wrap').hidden = true;
+  } else {
+    $('#grid').innerHTML = visible.map(item => renderCard(item)).join('');
+    $('#show-more-wrap').hidden = !hasMore;
+  }
+
+  if (STATE.selectedCardId) {
+    renderResearchPanel();
+  } else {
+    $('#research-panel-wrap').hidden = true;
+  }
+}
+
+function renderCard(item) {
+  const research = item.research;
+  const hasResearch = research && !research._error;
+  const showResearch = STATE.selectedCardId === item.id && hasResearch;
+
+  return `<div class="card-cell" id="cell-${item.id}">
+    <img src="${item.image_url||'/assets/'+item.id}" alt="${item.name||item.id}" loading="lazy">
+    <div class="info">
+      <div class="name">${item.name || item.id}</div>
+      ${item.set_name ? `<div class="set">${item.set_name}${item.year ? ' ('+item.year+')' : ''}</div>` : ''}
+      <div>${fmtBadge(item)}</div>
+      ${item.status === 'error' && item.error ? `<div class="error-msg">${item.error}</div>` : ''}
+      <div class="actions">
+        ${canCheckPrice(item) ? `<button class="btn btn-accent btn-sm" onclick="onCheckPrice('${item.id}')" ${STATE.researching?'disabled':''}>Check price</button>` : ''}
+      </div>
+    </div>
+  </div>`;
+}
+
+function canCheckPrice(item) {
+  if (item.status !== 'done') return false;
+  if (item.kind !== 'pokemon_tcg') return false;
+  return true;
+}
+
+async function onCheckPrice(itemId) {
+  if (STATE.researching) return;
+  const b = STATE.batch;
+  if (!b || !b.items) return;
+  const item = b.items.find(i => i.id === itemId);
+  if (!item) return;
+  STATE.selectedCardId = itemId;
+  if (item.research && !item.research._error) {
+    renderAll();
+    return;
+  }
+  await doResearch(itemId);
+}
+
+function renderResearchPanel() {
+  const b = STATE.batch;
+  if (!b || !b.items) return;
+  const item = b.items.find(i => i.id === STATE.selectedCardId);
+  if (!item) { $('#research-panel-wrap').hidden = true; return; }
+  const r = item.research;
+  if (!r) { $('#research-panel-wrap').hidden = true; return; }
+
+  if (r._error) {
+    $('#research-panel-wrap').hidden = false;
+    $('#research-panel').innerHTML = `<h3>Price check: ${item.name || item.id}</h3><div class="error-msg">${r._error}</div>`;
+    return;
+  }
+
+  const card = r.card || {};
+  $('#research-panel-wrap').hidden = false;
+  $('#research-panel').innerHTML = `
+    <h3>Price check: ${card.name || item.name || item.id}</h3>
+    <dl>
+      <dt>Name</dt><dd>${card.name || '—'}</dd>
+      <dt>Set</dt><dd>${card.set || '—'}${card.number ? ' #'+card.number : ''}</dd>
+      <dt>Catalogue rarity</dt><dd>${card.rarity || '—'}</dd>
+      <dt>Trend (EUR)</dt><dd>${r.trend !== undefined ? fmtNum(r.trend) : 'Unavailable'}</dd>
+      <dt>7-day average (EUR)</dt><dd>${r.average_7d !== undefined ? fmtNum(r.average_7d) : 'Unavailable'}</dd>
+      <dt>Provider</dt><dd>${r.provider || '—'}</dd>
+      <dt>Provider updated</dt><dd>${r.provider_updated_at ? new Date(r.provider_updated_at).toLocaleString() : '—'}</dd>
+      <dt>Retrieved</dt><dd>${r.retrieved_at ? new Date(r.retrieved_at).toLocaleString() : '—'}</dd>
+      <dt>Source</dt><dd>${r.source_url ? `<a href="${r.source_url}" target="_blank" rel="noopener">${r.source_url}</a>` : '—'}</dd>
+      <dt>Note</dt><dd>${r.note || '—'}</dd>
+      ${r.trace_url ? `<dt>Trace</dt><dd><a class="trace-link" href="${r.trace_url}" target="_blank" rel="noopener">View MLflow trace</a></dd>` : ''}
+      ${r.differs ? '<dt>Note</dt><dd>D3 prediction differs from catalogue data</dd>' : ''}
+    </dl>`;
+}
+
+function setFilter(filter) {
+  STATE.filter = filter;
+  STATE.visibleCount = 12;
+  renderAll();
+}
+
+function showMore() {
+  STATE.visibleCount += 12;
+  renderAll();
+}
+
+$('#analyze-btn').addEventListener('click', async () => {
+  await startAnalyze();
+  const b = await fetchBatch();
+  if (b) { STATE.batch = b; renderAll(); startPolling(); }
+});
+
+$('#show-more-btn').addEventListener('click', showMore);
+
+document.addEventListener('click', e => {
+  if (e.target.classList.contains('filter-btn')) {
+    setFilter(e.target.dataset.filter);
+  }
+});
+
+function init() {
+  fetchBatch().then(b => {
+    if (b) { STATE.batch = b; renderAll(); }
+    if (b && b.running) startPolling();
+    if (b && !b.running && b.completed === 0) startPolling();
+  });
+}
+
+init();
+</script>
+</body>
+</html>

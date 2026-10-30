@@ -1,0 +1,42 @@
+schemaVersion: 2.2.2
+metadata:
+  name: signal-desk-workspace
+  description: 'Card Scout: mixed-era cards, T4 classification and an OpenShift AI price agent'
+attributes:
+  controller.devfile.io/storage-type: per-user
+components:
+  - name: dev
+    container:
+      image: quay.io/devfile/universal-developer-image:latest
+      memoryRequest: 2Gi
+      memoryLimit: 6Gi
+      cpuRequest: 500m
+      cpuLimit: 2000m
+      mountSources: true
+      env:
+        - name: SHELL
+          value: /bin/bash
+        - name: APP_NAME
+          value: signal-desk
+        - name: GIT_SERVER
+          value: https://gitpop.apps.sno.msl.cloud
+        # Keep /injected-tools/bin first so the Dev Spaces AI injector stays on PATH.
+        - name: PATH
+          value: /injected-tools/bin:/home/user/.local/bin:/usr/local/go/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+commands:
+  - id: bootstrap
+    exec:
+      component: dev
+      label: "Install gitpop"
+      commandLine: |
+        echo "=== Bootstrap starting ==="
+        mkdir -p ${HOME}/.local/bin
+        curl -fsSL "${GIT_SERVER}/dl/gitpop?os=linux&arch=amd64" \
+          -o ${HOME}/.local/bin/gitpop \
+          && chmod +x ${HOME}/.local/bin/gitpop \
+          && echo "✓ gitpop installed" || echo "✗ gitpop install failed"
+        echo "=== Bootstrap complete ==="
+      workingDir: ${PROJECT_SOURCE}
+events:
+  postStart:
+    - bootstrap
