@@ -11,6 +11,8 @@ Choices freeze before market prices are fetched. Entry uses the first session op
 
 d3-mini ranks memo relevance; DeepSeek proposes individual company shares with verified tickers and exchanges, plus sourced relationship hypotheses. ETFs and indices are excluded. Foreign shares include FX conversion into the USD paper fund. A score is not confidence, BUY/SELL or predicted profit. Returns exclude dividends, fees and slippage. This is an educational replay, not a blind backtest. No orders are executed.
 
+Start with three news cards, choose a company and reveal the paper result. Full reasoning and market calculations stay in expandable sections. View MLflow trace opens the actual agent/tool graph. The bundled finance method is adapted from Anthropic Financial Services idea-generation.
+
 Read [APP_CONTRACT.md](APP_CONTRACT.md) for the app behavior and fixed model APIs.
 
 Keep the prepared HTTPS Route, restricted-v2, storage and Git → Tekton → Argo CD contract in AGENTS.md. The working Go reference and local setup are in [the workshop repository](https://github.com/fjcloud/aro-ai-app-platform/tree/main/examples/briefing-desk).
