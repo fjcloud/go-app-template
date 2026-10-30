@@ -33,7 +33,7 @@ class SecurityContract(unittest.TestCase):
         self.assertNotIn('privileged: true', agents)
         self.assertNotIn('oc create namespace', agents)
 
-class SignalDeskContract(unittest.TestCase):
+class CardScoutContract(unittest.TestCase):
     def test_public_https_route_reaches_the_app_directly(self):
         spec = yaml.safe_load((ROOT/'deploy/base/deployment.yaml').read_text())['spec']['template']['spec']
         self.assertEqual(spec['serviceAccountName'], 'signal-desk')
@@ -50,18 +50,25 @@ class SignalDeskContract(unittest.TestCase):
 
     def test_local_model_needs_no_runtime_api_key(self):
         spec = yaml.safe_load((ROOT/'deploy/base/deployment.yaml').read_text())['spec']['template']['spec']
-        self.assertNotIn('runtime-model', {v['name'] for v in spec['volumes']})
+        self.assertNotIn('runtime-model', {v['name'] for v in spec.get('volumes', [])})
         app = spec['containers'][0]
         self.assertEqual(app['envFrom'], [{'configMapRef': {'name': 'signal-desk-config'}}])
         self.assertNotIn('OPENAI_API_KEY', {e['name'] for e in app['env']})
         self.assertTrue(all(p['httpGet']['scheme']=='HTTP' and p['httpGet']['port']=='http' for n,p in app.items() if n.endswith('Probe')))
 
-    def test_persistent_data_and_backend_only_provider_key(self):
+    def test_thin_app_needs_no_credentials_or_persistent_volume(self):
         deployment = yaml.safe_load((ROOT/'deploy/base/deployment.yaml').read_text())['spec']
         self.assertEqual(deployment['strategy']['type'], 'Recreate')
         spec = deployment['template']['spec']
-        volumes = {v['name']: v for v in spec['volumes']}
-        self.assertEqual(volumes['data']['persistentVolumeClaim']['claimName'], 'signal-desk-data')
-        self.assertEqual(volumes['model']['secret']['secretName'], 'signal-desk-model')
-        mounts = spec['containers'][0]['volumeMounts']
-        self.assertTrue(next(m for m in mounts if m['name']=='model')['readOnly'])
+        self.assertFalse(spec['automountServiceAccountToken'])
+        self.assertEqual(spec.get('volumes', []), [])
+        self.assertEqual(spec['containers'][0].get('volumeMounts', []), [])
+        self.assertFalse(any(e['name'].endswith('KEY_FILE') for e in spec['containers'][0]['env']))
+
+    def test_contract_generates_new_app_against_prepared_api(self):
+        contract = (ROOT/'APP_CONTRACT.md').read_text()
+        agents = (ROOT/'AGENTS.md').read_text()
+        self.assertIn('from scratch', contract)
+        self.assertIn('CARD_SCOUT_URL', contract)
+        self.assertNotIn('cp -R', agents)
+        self.assertNotIn('briefing-desk', agents)

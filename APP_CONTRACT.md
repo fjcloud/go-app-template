@@ -1,64 +1,126 @@
-# Signal Desk — app contract
+# Card Scout — app contract
 
-Build one simple English Go web app: **repository news snapshot → memo relevance → company stock opportunities → virtual allocation → latest market result**. Reuse the complete [Go reference](https://github.com/fjcloud/aro-ai-app-platform/tree/main/examples/briefing-desk), including its tests and web assets. AGENTS.md supplies delivery rules; preserve the prepared scaffold.
+Build a small English Go web application **from scratch**. The platform is already
+prepared. Your job is the UI and a small backend proxy, not model orchestration.
+Keep the delivery scaffold and technical `APP_NAME=signal-desk`.
 
-## User flow
+## Experience
 
-1. Edit a fund memo (default: semiconductors and electronic components).
-2. Load `news/techmeme.json`, bundled from the Go reference with `go:embed`. It contains 161 dated Techmeme headlines/excerpts from 26–28 October 2026, captured on 29 October. Rank every saved article and show loaded/ranked counts. Export the corpus and provenance as JSON. Initially show three stories; More stories adds three at a time. Include the existing High relevance only filter. The normal flow must not contact Techmeme or require manual import. Preserve the recorded information cutoff and source links.
-3. Open a story and research up to three individual company stocks: the named business and, where supported, its suppliers, customers or competitors. Verify each ticker, company name and exchange with `search_companies`; ETFs, funds and indices are excluded. Return at most one idea per issuer; alternative exchange listings are not distinct companies. Show the relationship, specific catalyst, archived evidence and concrete risk. Related stocks do not automatically move together. An empty idea list is valid when evidence is insufficient.
-4. Allocate a virtual **$10,000** across selected ideas. No result or future price is shown yet.
-5. Reveal: persist and freeze the entire portfolio before requesting historical prices. Entry is each stock exchange’s first session open after the fixed snapshot cutoff (29 October 2026 at 00:05 America/New_York); valuation is the latest available regular-market quote, including intraday or delayed quotes. Keep the news fixed across calendar weeks. Show dates, source prices, position P&L and total fund value including uninvested cash.
-6. Show the actual quote timestamp and **Latest available market quote**. Update result fetches a fresh quote without altering choices. Try another story creates a fresh budget and retains previous rounds.
+A mixed box of cards → Analyze batch → Ranked cards → Check price.
 
-Keep one column: a collapsed fund memo, three news cards, compact company choices and then the paper result. Hide the empty portfolio. Use amount presets and retain custom amounts. Put full theses, risks and source citations under Show reasoning & sources; keep a short opportunity/risk on each company card. Put prices and FX under Prices & calculation. Preserve complete information in the disclosures. Use Reveal result for the frozen-market comparison. Show loading/progress and errors; preserve unsaved memo edits during polling. No ticker dashboard, microphone or real trades.
+- Title: **Card Scout**. Show the dataset description and analysis progress.
+- One primary **Analyze batch** button. Start analysis, then poll the batch API
+  about once a second while running. Disable duplicate starts. Completed results
+  are cached by the platform; refresh/reload must recover the current state.
+- A responsive card grid: image, catalogue name, set/year, D3 rarity badge and
+  **Check price**. Show 12 cards initially and a **Show more** button.
+- Simple filters: **All**, **Rare**, **Needs review**, **Other**. Filter the full
+  batch before pagination. Show the matching count and a useful empty state.
+  Rare means `kind=pokemon_tcg` and `rarity=rare_or_higher`; Needs review means
+  `needs_review=true`; Other means `other_card` or `not_a_card`.
+- Use the platform's ranking order. D3 predicts card kind and printed rarity;
+  its probabilities are not a price, market value or calibrated certainty.
+- Enable Check price only for successfully analyzed Pokémon items. Make one
+  request at a time, show progress, and preserve the selected card on errors.
+- Show a compact selected-card result: exact name, set, collector number,
+  **catalogue rarity**, Cardmarket EUR **Trend**, **7-day average**, provider
+  update date, **Source**, and **View MLflow trace** when a URL is supplied.
+  Display zero as zero and null as **Unavailable**. Retain the source timestamp;
+  it is not necessarily today's price. Preserve a differing D3 prediction.
+- Numeric fields must come from the platform's verified tool evidence. Do not
+  infer prices from the agent prose; keep that prose out of the price display.
+- Keep loading, partial results, failed items, retry and empty states visible.
+  Do not turn model/network failures into fabricated classifications or prices.
+- No login, microphone, uploads, portfolio, charts, trading, news feed or API-key
+  form. Use plain HTML/CSS/JavaScript, no frontend framework or CDN dependency.
 
-## Fixed model APIs — backend only
+## Prepared dataset and platform
 
-The prepared ConfigMap supplies all endpoint/model values. Never invent a URL or put credentials in the browser.
+The platform contains 48 English Pokémon cards across eight sets (1999–2023),
+plus a Yu-Gi-Oh! card, a receipt and a standalone Pokémon illustration. Images
+are preloaded. D3 receives image bytes only; held-out catalogue labels are not
+sent to it. Catalogue IDs are known from this curated dataset: do not claim
+that the model recognized the exact edition of an arbitrary uploaded photo.
 
-| Purpose | Endpoint and model | Contract |
-| --- | --- | --- |
-| Relevance | `DECISION_URL=http://d3-mini.decision-serving.svc.cluster.local:8080/v1/systemone`, `DECISION_MODEL=vllm-sr/d3-mini` | Native System One JSON. `state` contains memo and archived source facts; question `opportunity` has `type:score`, five ordered criteria 0–4, `require_full_input:true`. Validate complete coverage, the five probabilities and expected score; display `score / 4 × 100`. No generated explanation replaces this result. |
-| Research agent | `AGENT_URL=http://lsd-genai-playground-service.signal-desk-dev.svc.cluster.local:8321/v1`, `AGENT_MODEL=maas-vllm-inference-1/deepseekv4pro` | Native OpenShift AI `POST /responses`, `store:false`, bounded function-tool loop. Read `AGENT_KEY_FILE` and send `X-OGX-Provider-Data: {"vllm_api_token":"<runtime MaaS key>"}`. Use the reference client; no direct Azure call or provider key. |
+The platform runs D3 on the T4, serves the dataset, persists progress, calls the
+native OpenShift AI Responses agent and hosts its read-only price MCP tool.
+It owns all model credentials and MLflow tracing. **Do not implement any of
+those functions or copy their source into this application.**
 
-The developer and runtime both call the internal D3 service directly, with no API key or authentication proxy. DeepSeek uses its separate MaaS credential. Preserve the model endpoints supplied by the platform ConfigMap.
+The only backend setting is `CARD_SCOUT_URL`, supplied by `signal-desk-config`:
 
-D3 is a decision model from vLLM Semantic Router. Its score is **relevance/materiality**, not confidence, bullishness, probability of profit or expected return. Both positive and negative catalysts can score highly. Never replace failed inference with a keyword rule.
+```
+http://card-scout-platform.signal-desk-dev.svc.cluster.local:8080
+```
 
-## Evidence and replay rules
+Keep this URL and all platform calls server-side. The browser talks only to the
+same-origin Go app. No model key, OpenShift token or Azure credential is needed
+by the generated app. Use `LISTEN_ADDR` (default `:8080`).
 
-- Use the embedded, dated repository snapshot with its `America/New_York` cutoff. Do not roll it to another week or fetch publisher pages. Retain collection provenance, deduplicated publisher links and excerpt-only coverage. Copy `news/` with the Go source; never invent a replacement dataset.
-- Game research tools: `read_archive(source_id)`, `search_archive(query)`, `search_web(query)`, `read_web(source_id)`, `search_companies(query)`. Look up the direct business and another possible related company with at least two distinct company-name queries. Resolve source IDs server-side; accept only returned individual equities, bind the final schema to those symbols and require archived source citations for every idea. Company lookup returns current identity metadata only, without prices or historical fundamentals. Offer only the next required tool: archive read, archive search, public web search, one web read if eligible sources exist, then two distinct company queries. Force the named next tool and disable parallel calls; finish with schema-only synthesis. Keep the eight-tool budget (including retries) and nine turns. Web search uses Bing News RSS without a key and excludes sources with missing or post-cutoff publication dates. Only server-resolved returned source IDs can be read. Current publisher text requires eligible publication/modification metadata; otherwise use the explicitly dated search excerpt and disclose its coverage/error. Search-index dates and current fetches are not independent historical snapshots. No arbitrary caller URL, shell, market-price, return or order tool is available.
-- Yahoo entry-session opens and latest regular-market quotes are fetched by deterministic Go code after commitment. Validate symbol/currency, ordered sessions, positive prices and quote timestamps. Entry must follow the news cutoff. Never substitute an incomplete daily close for the latest quote, or invent a future quote. Report missing prices or unsupported split accounting instead of inventing data. Retrying a valuation cannot change the frozen portfolio.
-- Keep the paper budget and P&L in USD. For foreign shares, show local prices/currency, the stock exchange timezone and separate FX source/timestamp. Use the last daily opening FX reference available by stock entry, then the latest FX quote at valuation. USD P&L is `amount × ((exit_local × exit_USD_per_unit) / (entry_local × entry_USD_per_unit) − 1)`; fund value is `$10,000 + sum(P&L)`. Normalize pence quotes to their base currency. Missing or invalid FX prevents valuation. Exclude dividends, fees and slippage; no price targets or calibrated return forecasts.
-- This is an educational historical replay. A tool cutoff does not erase model training knowledge: never call it a blind backtest.
-- Cache scores/ideas by memo version and source-summary hash. Memo edits re-score saved news and invalidate old ideas. Persist documents, snapshots and rounds atomically under `DATA_DIR`. Version the equities game state so earlier ETF proposals and portfolios cannot be reused as company-share ideas; retain the earlier files.
+## API to proxy
 
-## Finance research method
+Preserve upstream HTTP status, JSON errors and image content types. Use bounded
+requests/timeouts. Only proxy these fixed routes to the configured platform;
+never accept an arbitrary caller URL or create a public general-purpose proxy.
 
-Copy `skills/` from the Go reference as well as every Go source file. The app embeds a reviewed adaptation of Anthropic Financial Services `idea-generation` (Apache-2.0, upstream revision `60565064557ca77b12f62aa7877f365d111c129d`). Keep its source, license and attribution files. The method maps a concrete catalyst through the value chain, examines indirect beneficiaries, challenges the thesis and states missing information. It uses the existing model with read-only archived news, dated public web reporting and verified company identities; no paid data connector, quantitative screen, target price or new privilege is added. New proposals and MLflow root spans record its name and upstream revision; old cached research must not be labeled as skill-assisted.
-
-## Small app API
-
-Reuse the reference JSON contracts:
-
-| Route | Purpose |
+| Application route | Prepared platform route |
 | --- | --- |
-| `GET /healthz` | `{"status":"ok"}` |
-| `GET /api/game` | Week, memo, news, ranking progress, ideas and current round |
-| `POST /api/game/load` | Load the bundled repository news and start/resume scoring |
-| `POST /api/game/import` | Import a bounded same-week JSON news export and rank its archived facts |
-| `GET /api/game/export` | Full collected corpus and disclosed coverage gaps |
-| `POST /api/profiles` | Save fund memo and re-score |
-| `POST /api/game/ideas` | Research a scored `article_id` |
-| `POST /api/game/play` | Validate `round_id`, `memo_version`, positions with `article_id`, `idea_id`, `amount`; freeze before prices |
-| `POST /api/game/settle` | Refresh frozen valuation |
-| `POST /api/game/reset` | Retain prior round, start again |
-| `/mcp` | Public read-only Streamable HTTP: `list_news`, `read_archive`, `search_archive`, `search_web`, `read_web`, `search_companies`. No prices, positions, mutation or credentials. |
+| `GET /` | Embedded UI |
+| `GET /healthz` | Local `{"status":"ok"}` |
+| `GET /api/batch` | `GET /api/batch` |
+| `POST /api/batch/analyze` | `POST /api/batch/analyze` (202) |
+| `GET /assets/item-NNN` | `GET /assets/item-NNN` |
+| `POST /api/cards/item-NNN/research` | Same POST path |
 
-## Platform and acceptance
+`GET /api/batch` returns:
 
-Keep technical APP_NAME `signal-desk`, the `signal-desk` ServiceAccount/ConfigMap, mounted model key, data PVC and service CA. Expose the app on `:8080` through its Service and HTTPS edge Route; the app and MCP connector require no login or token. All participants share the same workshop state. Traces go to the prepared MLflow `signal-desk` experiment; include model/tool timing and usage, never keys, provider headers, hidden reasoning blocks, full publisher pages or portfolio contents. Record public tool arguments, returned source IDs/URLs/excerpts, date exclusions, publisher-read errors and the final answer as MLflow Inputs / Outputs. Record every LLM turn separately, including its payload and visible function calls/answer; cap large histories explicitly while preserving individual tool results. Excluded results belong in the audit, not in model input. Show View MLflow trace for each research, using its server-supplied trace_url. Derive the public UI base, experiment and workspace from the existing tracing configuration. Link directly to the trace drawer, including workspace and selectedEvaluationId; do not expose a token or require a new setting. Retain the trace ID if tracing is not configured.
+```json
+{
+  "dataset": {"name":"Mixed-era collection","items":51,"pokemon_cards":48,"controls":3,"years":"1999–2023","snapshot_at":"2026-10-30T15:30:47.498665+00:00","identity_method":"Known catalogue references in the prepared dataset"},
+  "running": false, "completed": 1, "failed": 0,
+  "trace_id": "tr-example", "trace_url": "",
+  "items": [{"id":"item-039","image_url":"/assets/item-039","name":"Toedscool","set_name":"Scarlet & Violet","year":"2023","status":"done","error":null,"kind":"pokemon_tcg","rarity":"rare_or_higher","needs_review":false,"probabilities":{},"research":null}]
+}
+```
 
-Run reference Go race/vet tests. Verify archived-week scope, memo re-scoring, real tool evidence, budget checks, frozen choices before price fetch, timestamped latest-quote valuation and correct fund arithmetic. Test errors and missing data. Verify the English page on mobile. Distinguish fixture tests from actual model/cluster tests. Follow AGENTS.md for Git → Tekton → Argo CD and verify the matching pushed revision, not just an older healthy app.
+Items are already ranked. `status` is `pending`, `analyzing`, `done` or `error`.
+Before analysis, `kind` and `rarity` are null. `kind` can be `pokemon_tcg`,
+`other_card`, `not_a_card` or `uncertain`. Rarity can be `common`, `uncommon`,
+`rare_or_higher`, `not_applicable` or `uncertain`. Read dataset counts from the
+response. A later GET includes saved successful price research per item.
+
+A successful research response contains:
+
+```json
+{
+  "status":"ok",
+  "card":{"name":"Toedscool","set":"Scarlet & Violet","set_id":"sv01","number":"201","rarity":"Illustration rare"},
+  "provider":"Cardmarket","currency":"EUR","trend":4.09,"average_7d":4.26,
+  "provider_updated_at":"2026-10-29T22:54:33.169Z",
+  "retrieved_at":"2026-10-30T15:40:00Z",
+  "source_url":"https://api.tcgdex.net/v2/en/cards/sv01-201",
+  "trace_id":"tr-example","trace_url":"",
+  "note":"Market reference; language, finish and condition can change the value."
+}
+```
+
+These numbers illustrate the schema; **never hardcode them or seed fake results**.
+Research can return 409 if the item is not analyzed as Pokémon, 404 for an
+unknown ID, or 502 when evidence cannot be verified. Errors are `{"error":"..."}`.
+A successful response may have null prices. Show the model and tool traces using
+only server-supplied HTTPS URLs. Do not construct MLflow links in the browser.
+
+## Build, test and ship
+
+Write the application source yourself from this contract. Do not clone, fetch,
+copy or adapt an existing application or workshop reference implementation.
+Keep the scaffold; do not add Python, MCP servers, databases or model clients.
+
+Use `go:embed` for the UI. Prefer the Go standard library and a small source
+surface. Run `go test -race ./...`, `go vet ./...`, and a local build. Meaningful
+httptest cases must cover proxy status/errors, images and rejection of arbitrary
+routes. Check the UI at mobile width and keyboard access when a browser is
+available. Chromium must use `--use-mock-keychain`.
+
+Follow AGENTS.md for Git → Tekton → Argo CD. Verify the exact pushed revision and
+running image digest. Report actual model/browser checks separately from fixtures.

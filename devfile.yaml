@@ -1,7 +1,7 @@
 schemaVersion: 2.2.2
 metadata:
   name: signal-desk-workspace
-  description: 'Signal Desk: archived news, local relevance scoring and a paper-investment game'
+  description: 'Card Scout: mixed-era cards, T4 classification and an OpenShift AI price agent'
 attributes:
   controller.devfile.io/storage-type: per-user
 components:

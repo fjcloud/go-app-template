@@ -17,6 +17,7 @@ spec:
         app.kubernetes.io/name: signal-desk
     spec:
       serviceAccountName: signal-desk
+      automountServiceAccountToken: false
       securityContext:
         runAsNonRoot: true
         seccompProfile:
@@ -31,25 +32,6 @@ spec:
         env:
         - name: LISTEN_ADDR
           value: :8080
-        - name: SERVICE_CA_FILE
-          value: /etc/service-ca/service-ca.crt
-        - name: DATA_DIR
-          value: /data
-        - name: AGENT_URL
-          value: http://lsd-genai-playground-service.signal-desk-dev.svc.cluster.local:8321/v1
-        - name: AGENT_MODEL
-          value: maas-vllm-inference-1/deepseekv4pro
-        - name: AGENT_KEY_FILE
-          value: /etc/model/api-key
-        volumeMounts:
-        - name: service-ca
-          mountPath: /etc/service-ca
-          readOnly: true
-        - name: data
-          mountPath: /data
-        - name: model
-          mountPath: /etc/model
-          readOnly: true
         ports:
         - name: http
           containerPort: 8080
@@ -80,15 +62,5 @@ spec:
           capabilities:
             drop:
             - ALL
-      volumes:
-      - name: service-ca
-        configMap:
-          name: signal-desk-service-ca
-      - name: data
-        persistentVolumeClaim:
-          claimName: signal-desk-data
-      - name: model
-        secret:
-          secretName: signal-desk-model
   strategy:
     type: Recreate

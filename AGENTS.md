@@ -4,25 +4,12 @@ OpenShift Dev Space. `oc` is authenticated. `$GIT_SERVER` and `$APP_NAME` are se
 
 No Ansible. No `scripts/`. Do not rewrite `deploy/`, `pipeline/`, `gitops/`, `devfile.yaml`, or `opencode.json` (only change `image:` in `deploy/base/deployment.yaml` when shipping).
 
-## Fetch the reference once
+## Build from the contract
 
-Use Git and copy the complete source tree before coding. Avoid fetching individual
-GitHub HTML pages: it loses files and fills the model context with source text.
-
-```sh
-REFERENCE_DIR=$(mktemp -d)
-git clone --depth 1 --branch main \
-  https://github.com/fjcloud/aro-ai-app-platform.git "$REFERENCE_DIR/workshop"
-cp "$REFERENCE_DIR/workshop/examples/briefing-desk/"*.go .
-cp "$REFERENCE_DIR/workshop/examples/briefing-desk/"go.{mod,sum} .
-cp -R "$REFERENCE_DIR/workshop/examples/briefing-desk/web" .
-cp -R "$REFERENCE_DIR/workshop/examples/briefing-desk/news" .
-cp -R "$REFERENCE_DIR/workshop/examples/briefing-desk/skills" .
-```
-
-Copy only those sources/assets. The existing delivery scaffold and app contract
-belong to this template. Use the reference as the baseline, then implement the
-requested feature locally and test it.
+Read APP_CONTRACT.md. Generate the Go application from scratch in this checkout.
+Do not fetch, clone, copy or adapt a completed app or any workshop reference
+source. The existing scaffold and app contract are the starting point.
+The prepared platform API already owns the dataset, models, MCP, state and traces.
 
 ## Generate
 
@@ -143,19 +130,15 @@ Later change: local build, git push, new PipelineRun (same `oc create -f -`), `o
 
 ## OpenShift
 
-Deployment: app requests 50m/64Mi, limits 500m/512Mi, HTTP probes `/healthz:8080` directly to the app, `runAsNonRoot` + drop ALL, no `runAsUser`, no Route `spec.host`, TLS edge + Redirect. The public app and read-only MCP endpoint require no login. Keep the service CA mounts and signal-desk ServiceAccount for backend model/tracing access. The platform supplies these; never grant monitoring permissions yourself.
+Deployment: app requests 50m/64Mi, limits 500m/512Mi, HTTP probes `/healthz:8080`
+directly to the app, `runAsNonRoot` + drop ALL, no `runAsUser`, no Route `spec.host`,
+TLS edge + Redirect. The public app requires no login. The generated app has no
+model key or Kubernetes API access; it only proxies the fixed Card Scout API.
 
-## Signal Desk
+## Card Scout
 
-Read APP_CONTRACT.md before planning or coding. Use the complete Go reference at
-https://github.com/fjcloud/aro-ai-app-platform/tree/main/examples/briefing-desk
-(all Go source/tests, go.mod/go.sum, web/, news/ and skills/). Reuse its tested clients and replay
-rules, then implement the requested UI change. Do not replace the prepared scaffold
-or copy the workshop's platform scripts into this app. Keep technical APP_NAME
-signal-desk. App UI, research and errors must be in English.
-
-The platform injects signal-desk-config, a mounted model key and storage.
-Use the fixed native Responses and local decision APIs from that config. No Azure
-credentials, API keys in source, direct browser inference or heuristic fallback.
+Keep technical APP_NAME `signal-desk`. All UI and errors must be in English.
+The platform injects `CARD_SCOUT_URL` through `signal-desk-config`. Use it on the
+backend only. Do not implement inference, price scraping, MCP or tracing again.
 Run go test -race ./... and go vet ./... before shipping. Chromium, if available,
 must use --use-mock-keychain. Describe actual validation and visible failures.
