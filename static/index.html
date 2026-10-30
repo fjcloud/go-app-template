@@ -11,8 +11,7 @@ header{background:#1a1a2e;color:#fff;padding:1rem 1.25rem}
 header h1{font-size:1.4rem;font-weight:600}
 header p{font-size:.85rem;opacity:.8;margin-top:.25rem}
 main{max-width:1200px;margin:0 auto;padding:1.25rem}
-.card{border-radius:8px;box-shadow:0 1px 4px rgba(0,0,0,.1);overflow:hidden}
-.dataset-info{background:#fff;padding:1.25rem;margin-bottom:1.25rem}
+.section-card{background:#fff;border-radius:8px;padding:1.25rem;margin-bottom:1rem;box-shadow:0 1px 4px rgba(0,0,0,.1)}
 .dataset-info h2{font-size:1.1rem;margin-bottom:.5rem}
 .dataset-info .meta{font-size:.85rem;color:#555;display:flex;flex-wrap:wrap;gap:.75rem}
 .dataset-info .meta span{background:#e8e8e8;padding:.15rem .5rem;border-radius:4px}
@@ -28,6 +27,7 @@ main{max-width:1200px;margin:0 auto;padding:1.25rem}
 .progress-bar{height:6px;background:#e0e0e0;border-radius:3px;margin:1rem 0;overflow:hidden}
 .progress-bar-fill{height:100%;background:#533483;transition:width .3s}
 .status-msg{font-size:.85rem;color:#555;margin-bottom:.5rem}
+.status-msg.error{color:#c00}
 .filters{display:flex;gap:.5rem;margin:1rem 0;flex-wrap:wrap}
 .filter-btn{padding:.35rem .75rem;border:1px solid #ccc;border-radius:20px;font-size:.8rem;background:#fff;cursor:pointer;transition:all .15s}
 .filter-btn:hover{background:#e8e8ff}
@@ -38,7 +38,7 @@ main{max-width:1200px;margin:0 auto;padding:1.25rem}
 .card-cell .info{padding:.75rem;flex:1;display:flex;flex-direction:column;gap:.3rem}
 .card-cell .name{font-weight:600;font-size:.95rem}
 .card-cell .set{font-size:.8rem;color:#555}
-.card-cell .badge{display:inline-block;padding:.15rem .45rem;border-radius:4px;font-size:.75rem;font-weight:600}
+.badge{display:inline-block;padding:.15rem .45rem;border-radius:4px;font-size:.75rem;font-weight:600}
 .badge-rare{background:#f8d7da;color:#721c24}
 .badge-common{background:#d4edda;color:#155724}
 .badge-other{background:#fff3cd;color:#856404}
@@ -48,17 +48,20 @@ main{max-width:1200px;margin:0 auto;padding:1.25rem}
 .badge-error{background:#f8d7da;color:#721c24}
 .card-cell .actions{margin-top:.5rem}
 .show-more{display:block;margin:1.5rem auto;text-align:center}
-.research-panel{background:#fff;border-radius:8px;padding:1.25rem;margin-top:1.25rem;box-shadow:0 2px 8px rgba(0,0,0,.15)}
+.research-panel{background:#fff;border-radius:8px;padding:1.25rem;box-shadow:0 2px 8px rgba(0,0,0,.15);margin-bottom:1rem}
 .research-panel h3{font-size:1rem;margin-bottom:.75rem;color:#16213e}
 .research-panel dl{display:grid;grid-template-columns:180px 1fr;gap:.35rem .75rem;font-size:.85rem}
 .research-panel dt{font-weight:600;color:#555}
 .research-panel dd{word-break:break-word}
 .research-panel .trace-link{color:#533483;text-decoration:underline}
+.research-panel .checking{display:flex;align-items:center;gap:.5rem;color:#555;font-size:.9rem}
 .error-msg{color:#c00;font-size:.85rem}
 .empty-state{text-align:center;padding:2rem;color:#888;font-size:.9rem}
 .loading{text-align:center;padding:2rem;color:#888}
 .spinner{display:inline-block;width:20px;height:20px;border:3px solid #ddd;border-top-color:#533483;border-radius:50%;animation:spin .6s linear infinite;margin-right:.5rem;vertical-align:middle}
 @keyframes spin{to{transform:rotate(360deg)}}
+.main-error{background:#fff3cd;border:1px solid #ffc107;border-radius:8px;padding:1rem;margin-bottom:1rem;display:flex;align-items:center;gap:.75rem;flex-wrap:wrap}
+.main-error p{font-size:.85rem;color:#856404;flex:1}
 @media(max-width:600px){.grid{grid-template-columns:1fr}.research-panel dl{grid-template-columns:1fr}.research-panel dt{margin-top:.5rem}}
 </style>
 </head>
@@ -68,7 +71,7 @@ main{max-width:1200px;margin:0 auto;padding:1.25rem}
   <p id="dataset-desc">Loading dataset…</p>
 </header>
 <main>
-  <section class="dataset-info card" id="dataset-info" hidden>
+  <section class="dataset-info section-card" id="dataset-info" hidden>
     <h2 id="dataset-name"></h2>
     <div class="meta" id="dataset-meta"></div>
   </section>
@@ -81,8 +84,19 @@ main{max-width:1200px;margin:0 auto;padding:1.25rem}
     </div>
   </div>
 
+  <div id="main-error-wrap" hidden>
+    <div class="main-error">
+      <p id="main-error-msg"></p>
+      <button class="btn btn-secondary" id="main-error-retry">Retry</button>
+    </div>
+  </div>
+
+  <div id="research-panel-wrap" hidden>
+    <div class="research-panel" id="research-panel"></div>
+  </div>
+
   <div class="filters" id="filters" hidden>
-    <button class="filter-btn active" data-filter="all">All</button>
+    <button class="filter-btn" data-filter="all">All</button>
     <button class="filter-btn" data-filter="rare">Rare</button>
     <button class="filter-btn" data-filter="review">Needs review</button>
     <button class="filter-btn" data-filter="other">Other</button>
@@ -92,54 +106,110 @@ main{max-width:1200px;margin:0 auto;padding:1.25rem}
   <div class="show-more" id="show-more-wrap" hidden>
     <button class="btn btn-secondary" id="show-more-btn">Show more</button>
   </div>
-
-  <div id="research-panel-wrap" hidden>
-    <div class="research-panel card" id="research-panel"></div>
-  </div>
 </main>
 
 <script>
-const STATE = {
+(function(){
+"use strict";
+
+var STATE = {
   batch: null,
   filter: 'all',
   visibleCount: 12,
   polling: null,
+  pollingFailures: 0,
   researching: false,
-  selectedCardId: null
+  researchingId: null,
+  selectedCardId: null,
+  initialError: null,
+  analyzeStarted: false
 };
 
-const $ = s => document.querySelector(s);
+var FILTER_KEY = 'cardscout_filter';
+
+function esc(s) {
+  if (s == null) s = '';
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+
+function escAttr(s) {
+  return esc(s);
+}
+
+function safeURL(u) {
+  if (!u) return '';
+  var s = String(u);
+  if (/^https:\/\/[^\s"'<>]+$/.test(s)) return s;
+  return '';
+}
+
+function safeImgURL(u) {
+  if (!u) return '';
+  var s = String(u);
+  if (/^\/assets\/item-\d+$/.test(s)) return s;
+  return '';
+}
+
+function restoreFilter() {
+  try {
+    var v = localStorage.getItem(FILTER_KEY);
+    if (v === 'all' || v === 'rare' || v === 'review' || v === 'other') STATE.filter = v;
+  } catch(e) {}
+}
+
+function saveFilter() {
+  try { localStorage.setItem(FILTER_KEY, STATE.filter); } catch(e) {}
+}
+
+restoreFilter();
+
+var $ = document.querySelector.bind(document);
 
 async function fetchBatch() {
   try {
-    const r = await fetch('/api/batch');
-    if (!r.ok) throw new Error('Batch fetch failed: '+r.status);
+    var r = await fetch('/api/batch');
+    if (!r.ok) {
+      var txt = '';
+      try { txt = (await r.json()).error || ''; } catch(e) {}
+      throw new Error(txt || 'Batch fetch failed: '+r.status);
+    }
+    STATE.initialError = null;
+    STATE.pollingFailures = 0;
     return await r.json();
   } catch(e) {
-    return null;
+    return {_error: e.message};
   }
 }
 
 async function startAnalyze() {
   try {
-    const r = await fetch('/api/batch/analyze', {method:'POST'});
+    var r = await fetch('/api/batch/analyze', {method:'POST'});
+    if (r.status === 202) { STATE.analyzeStarted = true; return; }
     if (r.status === 409) return;
-    if (!r.ok) throw new Error('Analyze start failed: '+r.status);
+    var err = '';
+    try { var d = await r.json(); err = d.error || ''; } catch(e) {}
+    throw new Error(err || 'Analyze start failed: '+r.status);
   } catch(e) {
-    $('#status-msg').textContent = 'Failed to start analysis.';
+    $('#status-msg').textContent = 'Failed to start analysis: ' + esc(e.message);
+    $('#status-msg').className = 'status-msg error';
   }
+}
+
+function stopPolling() {
+  if (STATE.polling) { clearInterval(STATE.polling); STATE.polling = null; }
 }
 
 function startPolling() {
   if (STATE.polling) return;
-  STATE.polling = setInterval(async () => {
-    const b = await fetchBatch();
-    if (!b) return;
-    STATE.batch = b;
-    if (!b.running) {
-      clearInterval(STATE.polling);
-      STATE.polling = null;
+  STATE.polling = setInterval(async function() {
+    var b = await fetchBatch();
+    if (b && b._error) {
+      STATE.pollingFailures++;
+      if (STATE.pollingFailures >= 5) { stopPolling(); renderAll(); }
+      return;
     }
+    if (b) STATE.batch = b;
+    if (b && !b.running) stopPolling();
     renderAll();
   }, 1100);
 }
@@ -147,12 +217,13 @@ function startPolling() {
 async function doResearch(itemId) {
   if (STATE.researching) return;
   STATE.researching = true;
+  STATE.researchingId = itemId;
   renderAll();
   try {
-    const r = await fetch('/api/cards/'+itemId+'/research', {method:'POST'});
-    const data = await r.json();
+    var r = await fetch('/api/cards/'+itemId+'/research', {method:'POST'});
+    var data = await r.json();
     if (STATE.batch && STATE.batch.items) {
-      const idx = STATE.batch.items.findIndex(i => i.id === itemId);
+      var idx = STATE.batch.items.findIndex(function(i){ return i.id === itemId; });
       if (idx >= 0) {
         if (r.ok) {
           STATE.batch.items[idx].research = data;
@@ -163,11 +234,12 @@ async function doResearch(itemId) {
     }
   } catch(e) {
     if (STATE.batch && STATE.batch.items) {
-      const idx = STATE.batch.items.findIndex(i => i.id === itemId);
-      if (idx >= 0) STATE.batch.items[idx].research = {_error: 'Network error'};
+      var idx2 = STATE.batch.items.findIndex(function(i){ return i.id === itemId; });
+      if (idx2 >= 0) STATE.batch.items[idx2].research = {_error: 'Network error'};
     }
   }
   STATE.researching = false;
+  STATE.researchingId = null;
   renderAll();
 }
 
@@ -186,125 +258,153 @@ function fmtNum(v) {
 }
 
 function fmtRarityLabel(rarity) {
-  if (!rarity) return '—';
+  if (!rarity) return '';
   return rarity.replace(/_/g,' ');
 }
 
 function fmtBadge(item) {
   if (item.status === 'pending' || item.status === 'analyzing') {
-    return `<span class="badge badge-pending">${item.status}</span>`;
+    return '<span class="badge badge-pending">' + esc(item.status) + '</span>';
   }
   if (item.status === 'error') {
-    return `<span class="badge badge-error">Error</span>`;
+    return '<span class="badge badge-error">Error</span>';
   }
   if (item.needs_review) {
-    return `<span class="badge badge-needs-review">Needs review</span>`;
+    return '<span class="badge badge-needs-review">Needs review</span>';
   }
-  const k = item.kind;
-  const r = item.rarity;
+  var k = item.kind;
+  var r = item.rarity;
   if (k === 'pokemon_tcg' && r === 'rare_or_higher') {
-    return `<span class="badge badge-rare">Rare</span>`;
+    return '<span class="badge badge-rare">Rare</span>';
   }
   if (k === 'pokemon_tcg' && (r === 'common' || r === 'uncommon')) {
-    return `<span class="badge badge-common">${fmtRarityLabel(r)}</span>`;
+    return '<span class="badge badge-common">' + esc(fmtRarityLabel(r)) + '</span>';
   }
   if (k === 'other_card' || k === 'not_a_card') {
-    return `<span class="badge badge-other">${k.replace(/_/g,' ')}</span>`;
+    return '<span class="badge badge-other">' + esc(k.replace(/_/g,' ')) + '</span>';
   }
   if (k === 'uncertain' || r === 'uncertain') {
-    return `<span class="badge badge-uncertain">Uncertain</span>`;
+    return '<span class="badge badge-uncertain">Uncertain</span>';
   }
-  return `<span class="badge badge-uncertain">${k||'—'} ${fmtRarityLabel(r)}</span>`;
+  return '<span class="badge badge-uncertain">' + esc(k||'') + ' ' + esc(fmtRarityLabel(r)) + '</span>';
 }
 
 function renderAll() {
-  const b = STATE.batch;
+  var b = STATE.batch;
+
+  if (STATE.initialError) {
+    $('#dataset-desc').textContent = 'Failed to load dataset';
+    $('#dataset-info').hidden = true;
+    $('#filters').hidden = true;
+    $('#grid').innerHTML = '<div class="loading"><span class="spinner"></span>Loading…</div>';
+    $('#main-error-wrap').hidden = false;
+    $('#main-error-msg').textContent = STATE.initialError;
+    return;
+  }
+
   if (!b || !b.dataset) {
-    $('#dataset-desc').textContent = 'Loading dataset…';
+    if (b && b._error) {
+      STATE.initialError = b._error;
+      $('#dataset-desc').textContent = 'Failed to load dataset';
+      $('#main-error-wrap').hidden = false;
+      $('#main-error-msg').textContent = b._error;
+    }
     $('#dataset-info').hidden = true;
     $('#filters').hidden = true;
     $('#grid').innerHTML = '<div class="loading"><span class="spinner"></span>Loading…</div>';
     return;
   }
 
-  const ds = b.dataset;
-  $('#dataset-desc').textContent = ds.name + ' — ' + ds.items + ' items, ' + ds.pokemon_cards + ' Pokémon cards, ' + ds.controls + ' controls, ' + ds.years;
+  STATE.initialError = null;
+  $('#main-error-wrap').hidden = true;
+
+  var ds = b.dataset;
+  $('#dataset-desc').textContent = ds.name + ' \u2014 ' + ds.items + ' items, ' + ds.pokemon_cards + ' Pok\u00e9mon cards, ' + ds.controls + ' controls, ' + ds.years;
   $('#dataset-name').textContent = ds.name;
-  $('#dataset-meta').innerHTML =
-    `<span>${ds.items} items</span><span>${ds.pokemon_cards} Pokémon</span><span>${ds.controls} controls</span><span>${ds.years}</span>` +
-    (ds.identity_method ? `<span>${ds.identity_method}</span>` : '');
-  if (ds.snapshot_at) {
-    $('#dataset-meta').innerHTML += `<span>Snapshot: ${new Date(ds.snapshot_at).toLocaleString()}</span>`;
-  }
+  var metaHtml = '<span>' + ds.items + ' items</span><span>' + ds.pokemon_cards + ' Pok\u00e9mon</span><span>' + ds.controls + ' controls</span><span>' + ds.years + '</span>';
+  if (ds.identity_method) metaHtml += '<span>' + esc(ds.identity_method) + '</span>';
+  if (ds.snapshot_at) metaHtml += '<span>Snapshot: ' + new Date(ds.snapshot_at).toLocaleString() + '</span>';
+  $('#dataset-meta').innerHTML = metaHtml;
   $('#dataset-info').hidden = false;
 
-  const running = b.running;
-  const completed = b.completed || 0;
-  const total = b.items ? b.items.length : (ds.items || 0);
-  const progressPct = total > 0 ? Math.round((completed/total)*100) : 0;
+  var running = b.running;
+  var completed = b.completed || 0;
+  var total = b.items ? b.items.length : (ds.items || 0);
+  var progressPct = total > 0 ? Math.round((completed/total)*100) : 0;
 
-  $('#analyze-btn').disabled = running || STATE.researching;
+  var btn = $('#analyze-btn');
+  btn.disabled = running || STATE.researching;
   if (running) {
-    $('#status-msg').textContent = `Analyzing… ${completed}/${total}`;
+    $('#status-msg').textContent = 'Analyzing\u2026 ' + completed + '/' + total;
+    $('#status-msg').className = 'status-msg';
     $('#progress-bar-wrap').hidden = false;
     $('#progress-bar-fill').style.width = progressPct+'%';
     startPolling();
   } else {
-    $('#status-msg').textContent = completed === 0 && total > 0 ? 'Ready. Click Analyze batch to start.' : `Complete: ${completed}/${total}` + (b.failed ? ` (${b.failed} failed)` : '');
+    if (completed === 0 && total > 0 && !STATE.polling && !STATE.analyzeStarted) {
+      $('#status-msg').textContent = 'Ready. Click Analyze batch to start.';
+    } else if (completed > 0) {
+      $('#status-msg').textContent = 'Complete: ' + completed + '/' + total + (b.failed ? ' (' + b.failed + ' failed)' : '');
+    }
+    $('#status-msg').className = 'status-msg';
     $('#progress-bar-wrap').hidden = true;
   }
 
-  if (!running && total > 0 && completed === 0) {
+  if (!running && total > 0 && completed === 0 && !STATE.polling) {
     startPolling();
   }
 
-  const items = b.items || [];
-  const filtered = items.filter(i => matchesFilter(i, STATE.filter));
-  const visible = filtered.slice(0, STATE.visibleCount);
-  const hasMore = filtered.length > STATE.visibleCount;
+  var items = b.items || [];
+  var filtered = items.filter(function(i){ return matchesFilter(i, STATE.filter); });
+  var visible = filtered.slice(0, STATE.visibleCount);
+  var hasMore = filtered.length > STATE.visibleCount;
 
-  $('#filters').hidden = filtered.length === 0 && !running;
-  document.querySelectorAll('.filter-btn').forEach(btn => {
-    btn.classList.toggle('active', btn.dataset.filter === STATE.filter);
-    const cnt = items.filter(i => matchesFilter(i, btn.dataset.filter)).length;
-    let label = btn.dataset.filter === 'all' ? 'All' :
-      btn.dataset.filter === 'rare' ? 'Rare' :
-      btn.dataset.filter === 'review' ? 'Needs review' : 'Other';
-    btn.textContent = label + ' (' + cnt + ')';
-  });
-
-  if (visible.length === 0 && filtered.length === 0) {
-    $('#grid').innerHTML = '<div class="empty-state">No cards match this filter.</div>';
-    $('#show-more-wrap').hidden = true;
-  } else {
-    $('#grid').innerHTML = visible.map(item => renderCard(item)).join('');
-    $('#show-more-wrap').hidden = !hasMore;
+  $('#filters').hidden = false;
+  var filterBtns = document.querySelectorAll('.filter-btn');
+  for (var fi = 0; fi < filterBtns.length; fi++) {
+    var btnEl = filterBtns[fi];
+    var filterName = btnEl.getAttribute('data-filter');
+    btnEl.classList.toggle('active', filterName === STATE.filter);
+    var cnt = items.filter(function(i){ return matchesFilter(i, filterName); }).length;
+    var label = filterName === 'all' ? 'All' : filterName === 'rare' ? 'Rare' : filterName === 'review' ? 'Needs review' : 'Other';
+    btnEl.textContent = label + ' (' + cnt + ')';
   }
 
   if (STATE.selectedCardId) {
     renderResearchPanel();
+  }
+
+  if (visible.length === 0) {
+    $('#grid').innerHTML = '<div class="empty-state">No cards match this filter.</div>';
+    $('#show-more-wrap').hidden = true;
   } else {
-    $('#research-panel-wrap').hidden = true;
+    var cardHtml = visible.map(renderCard).join('');
+    $('#grid').innerHTML = cardHtml;
+    $('#show-more-wrap').hidden = !hasMore;
   }
 }
 
 function renderCard(item) {
-  const research = item.research;
-  const hasResearch = research && !research._error;
-  const showResearch = STATE.selectedCardId === item.id && hasResearch;
+  var r = item.research;
+  var imgSrc = safeImgURL(item.image_url) || '/assets/' + item.id;
+  var alt = esc(item.name || item.id);
 
-  return `<div class="card-cell" id="cell-${item.id}">
-    <img src="${item.image_url||'/assets/'+item.id}" alt="${item.name||item.id}" loading="lazy">
-    <div class="info">
-      <div class="name">${item.name || item.id}</div>
-      ${item.set_name ? `<div class="set">${item.set_name}${item.year ? ' ('+item.year+')' : ''}</div>` : ''}
-      <div>${fmtBadge(item)}</div>
-      ${item.status === 'error' && item.error ? `<div class="error-msg">${item.error}</div>` : ''}
-      <div class="actions">
-        ${canCheckPrice(item) ? `<button class="btn btn-accent btn-sm" onclick="onCheckPrice('${item.id}')" ${STATE.researching?'disabled':''}>Check price</button>` : ''}
-      </div>
-    </div>
-  </div>`;
+  var html = '<div class="card-cell" id="cell-' + esc(item.id) + '">';
+  html += '<img src="' + imgSrc + '" alt="' + alt + '" loading="lazy">';
+  html += '<div class="info">';
+  html += '<div class="name">' + esc(item.name || item.id) + '</div>';
+  if (item.set_name) html += '<div class="set">' + esc(item.set_name) + (item.year ? ' (' + esc(String(item.year)) + ')' : '') + '</div>';
+  html += '<div>' + fmtBadge(item) + '</div>';
+  if (item.status === 'error' && item.error) html += '<div class="error-msg">' + esc(item.error) + '</div>';
+  html += '<div class="actions">';
+  if (canCheckPrice(item)) {
+    var isResearchingThis = STATE.researching && STATE.researchingId === item.id;
+    html += '<button class="btn btn-accent" data-action="check-price" data-item-id="' + escAttr(item.id) + '"' + (STATE.researching ? ' disabled' : '') + '>';
+    html += isResearchingThis ? '<span class="spinner"></span>Checking price' : 'Check price';
+    html += '</button>';
+  }
+  html += '</div></div></div>';
+  return html;
 }
 
 function canCheckPrice(item) {
@@ -315,11 +415,11 @@ function canCheckPrice(item) {
 
 async function onCheckPrice(itemId) {
   if (STATE.researching) return;
-  const b = STATE.batch;
-  if (!b || !b.items) return;
-  const item = b.items.find(i => i.id === itemId);
-  if (!item) return;
   STATE.selectedCardId = itemId;
+  var b = STATE.batch;
+  if (!b || !b.items) return;
+  var item = b.items.find(function(i){ return i.id === itemId; });
+  if (!item) return;
   if (item.research && !item.research._error) {
     renderAll();
     return;
@@ -328,42 +428,53 @@ async function onCheckPrice(itemId) {
 }
 
 function renderResearchPanel() {
-  const b = STATE.batch;
-  if (!b || !b.items) return;
-  const item = b.items.find(i => i.id === STATE.selectedCardId);
+  var b = STATE.batch;
+  if (!b || !b.items) { $('#research-panel-wrap').hidden = true; return; }
+  var item = b.items.find(function(i){ return i.id === STATE.selectedCardId; });
   if (!item) { $('#research-panel-wrap').hidden = true; return; }
-  const r = item.research;
+
+  if (STATE.researching && STATE.researchingId === STATE.selectedCardId) {
+    $('#research-panel-wrap').hidden = false;
+    $('#research-panel').innerHTML = '<div class="checking"><span class="spinner"></span>Checking price\u2026</div>';
+    return;
+  }
+
+  var r = item.research;
   if (!r) { $('#research-panel-wrap').hidden = true; return; }
 
   if (r._error) {
     $('#research-panel-wrap').hidden = false;
-    $('#research-panel').innerHTML = `<h3>Price check: ${item.name || item.id}</h3><div class="error-msg">${r._error}</div>`;
+    $('#research-panel').innerHTML = '<h3>Price check: ' + esc(item.name || item.id) + '</h3><div class="error-msg">' + esc(r._error) + '</div>';
     return;
   }
 
-  const card = r.card || {};
+  var card = r.card || {};
+  var srcURL = safeURL(r.source_url);
+  var traceURL = safeURL(r.trace_url);
+
+  var row = function(dt, dd) { return dt ? '<dt>' + dt + '</dt><dd>' + dd + '</dd>' : '<dt></dt><dd>' + dd + '</dd>'; };
+
+  var rows = '';
+  rows += row('Name', esc(card.name || item.name || item.id));
+  rows += row('Set', esc(card.set || '') + (card.number ? ' #' + esc(String(card.number)) : '') || '\u2014');
+  rows += row('Collector number', card.number ? esc(String(card.number)) : '\u2014');
+  rows += row('Catalogue rarity', esc(card.rarity || '\u2014'));
+  rows += row('Trend (EUR)', r.trend !== undefined ? esc(fmtNum(r.trend)) : 'Unavailable');
+  rows += row('7-day average (EUR)', r.average_7d !== undefined ? esc(fmtNum(r.average_7d)) : 'Unavailable');
+  rows += row('Provider', esc(r.provider || '\u2014'));
+  rows += row('Provider updated', r.provider_updated_at ? new Date(r.provider_updated_at).toLocaleString() : '\u2014');
+  rows += row('Source', srcURL ? '<a href="' + srcURL + '" target="_blank" rel="noopener">' + esc(srcURL) + '</a>' : '\u2014');
+  rows += row('Note', esc(r.note || '\u2014'));
+  if (traceURL) rows += row('Trace', '<a class="trace-link" href="' + traceURL + '" target="_blank" rel="noopener">View MLflow trace</a>');
+
   $('#research-panel-wrap').hidden = false;
-  $('#research-panel').innerHTML = `
-    <h3>Price check: ${card.name || item.name || item.id}</h3>
-    <dl>
-      <dt>Name</dt><dd>${card.name || '—'}</dd>
-      <dt>Set</dt><dd>${card.set || '—'}${card.number ? ' #'+card.number : ''}</dd>
-      <dt>Catalogue rarity</dt><dd>${card.rarity || '—'}</dd>
-      <dt>Trend (EUR)</dt><dd>${r.trend !== undefined ? fmtNum(r.trend) : 'Unavailable'}</dd>
-      <dt>7-day average (EUR)</dt><dd>${r.average_7d !== undefined ? fmtNum(r.average_7d) : 'Unavailable'}</dd>
-      <dt>Provider</dt><dd>${r.provider || '—'}</dd>
-      <dt>Provider updated</dt><dd>${r.provider_updated_at ? new Date(r.provider_updated_at).toLocaleString() : '—'}</dd>
-      <dt>Retrieved</dt><dd>${r.retrieved_at ? new Date(r.retrieved_at).toLocaleString() : '—'}</dd>
-      <dt>Source</dt><dd>${r.source_url ? `<a href="${r.source_url}" target="_blank" rel="noopener">${r.source_url}</a>` : '—'}</dd>
-      <dt>Note</dt><dd>${r.note || '—'}</dd>
-      ${r.trace_url ? `<dt>Trace</dt><dd><a class="trace-link" href="${r.trace_url}" target="_blank" rel="noopener">View MLflow trace</a></dd>` : ''}
-      ${r.differs ? '<dt>Note</dt><dd>D3 prediction differs from catalogue data</dd>' : ''}
-    </dl>`;
+  $('#research-panel').innerHTML = '<h3>Price check: ' + esc(item.name || item.id) + '</h3><dl>' + rows + '</dl>';
 }
 
 function setFilter(filter) {
   STATE.filter = filter;
   STATE.visibleCount = 12;
+  saveFilter();
   renderAll();
 }
 
@@ -372,29 +483,59 @@ function showMore() {
   renderAll();
 }
 
-$('#analyze-btn').addEventListener('click', async () => {
-  await startAnalyze();
-  const b = await fetchBatch();
-  if (b) { STATE.batch = b; renderAll(); startPolling(); }
-});
+function retryInit() {
+  STATE.initialError = null;
+  STATE.batch = null;
+  STATE.analyzeStarted = false;
+  $('#main-error-wrap').hidden = true;
+  $('#grid').innerHTML = '<div class="loading"><span class="spinner"></span>Loading…</div>';
+  initLoad();
+}
 
-$('#show-more-btn').addEventListener('click', showMore);
-
-document.addEventListener('click', e => {
-  if (e.target.classList.contains('filter-btn')) {
-    setFilter(e.target.dataset.filter);
-  }
-});
-
-function init() {
-  fetchBatch().then(b => {
-    if (b) { STATE.batch = b; renderAll(); }
-    if (b && b.running) startPolling();
-    if (b && !b.running && b.completed === 0) startPolling();
+function initLoad() {
+  fetchBatch().then(function(b) {
+    if (b) {
+      if (b._error) {
+        STATE.initialError = b._error;
+        renderAll();
+        return;
+      }
+      STATE.batch = b;
+      renderAll();
+      if (b.running) startPolling();
+      if (!b.running && b.completed === 0) startPolling();
+    } else {
+      STATE.initialError = 'Unable to load batch data';
+      renderAll();
+    }
   });
 }
 
-init();
+$('#analyze-btn').addEventListener('click', function() {
+  startAnalyze().then(function() {
+    fetchBatch().then(function(b) {
+      if (b && !b._error) { STATE.batch = b; renderAll(); startPolling(); }
+    });
+  });
+});
+
+$('#show-more-btn').addEventListener('click', showMore);
+$('#main-error-retry').addEventListener('click', retryInit);
+
+document.addEventListener('click', function(e) {
+  var target = e.target;
+  if (target.classList.contains('filter-btn')) {
+    setFilter(target.getAttribute('data-filter'));
+    return;
+  }
+  if (target.hasAttribute('data-action') && target.getAttribute('data-action') === 'check-price') {
+    onCheckPrice(target.getAttribute('data-item-id'));
+    return;
+  }
+});
+
+initLoad();
+})();
 </script>
 </body>
 </html>

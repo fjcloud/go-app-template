@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"regexp"
 	"strings"
 	"time"
 )
@@ -15,8 +16,10 @@ import (
 var static embed.FS
 
 var (
-	cardScoutURL string
-	httpClient   = &http.Client{Timeout: 30 * time.Second}
+	cardScoutURL    string
+	httpClient      = &http.Client{Timeout: 30 * time.Second}
+	reAssetItem     = regexp.MustCompile(`^/assets/item-\d+$`)
+	reResearch      = regexp.MustCompile(`^/api/cards/item-\d+/research$`)
 )
 
 func main() {
@@ -49,9 +52,15 @@ func main() {
 	}
 }
 
+func jsonError(w http.ResponseWriter, msg string, code int) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(code)
+	w.Write([]byte(`{"error":"` + msg + `"}`))
+}
+
 func handleHealthz(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
-		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		jsonError(w, "method not allowed", http.StatusMethodNotAllowed)
 		return
 	}
 	w.Header().Set("Content-Type", "application/json")
@@ -59,12 +68,16 @@ func handleHealthz(w http.ResponseWriter, r *http.Request) {
 }
 
 func handleBatch(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		jsonError(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
 	proxyRequest(w, r, cardScoutURL+"/api/batch")
 }
 
 func handleAnalyze(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
-		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		jsonError(w, "method not allowed", http.StatusMethodNotAllowed)
 		return
 	}
 	proxyRequest(w, r, cardScoutURL+"/api/batch/analyze")
@@ -72,28 +85,26 @@ func handleAnalyze(w http.ResponseWriter, r *http.Request) {
 
 func handleAssets(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
-		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		jsonError(w, "method not allowed", http.StatusMethodNotAllowed)
 		return
 	}
-	path := r.URL.Path
-	if !strings.HasPrefix(path, "/assets/item-") {
-		http.Error(w, "not found", http.StatusNotFound)
+	if !reAssetItem.MatchString(r.URL.Path) {
+		jsonError(w, "not found", http.StatusNotFound)
 		return
 	}
-	proxyRequest(w, r, cardScoutURL+path)
+	proxyRequest(w, r, cardScoutURL+r.URL.Path)
 }
 
 func handleCardResearch(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
-		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		jsonError(w, "method not allowed", http.StatusMethodNotAllowed)
 		return
 	}
-	path := r.URL.Path
-	if !strings.HasPrefix(path, "/api/cards/item-") || !strings.HasSuffix(path, "/research") {
-		http.Error(w, "not found", http.StatusNotFound)
+	if !reResearch.MatchString(r.URL.Path) {
+		jsonError(w, "not found", http.StatusNotFound)
 		return
 	}
-	proxyRequest(w, r, cardScoutURL+path)
+	proxyRequest(w, r, cardScoutURL+r.URL.Path)
 }
 
 func handleUI(w http.ResponseWriter, r *http.Request) {
@@ -102,12 +113,12 @@ func handleUI(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if r.Method != http.MethodGet && r.Method != http.MethodHead {
-		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		jsonError(w, "method not allowed", http.StatusMethodNotAllowed)
 		return
 	}
 	content, err := static.ReadFile("static/index.html")
 	if err != nil {
-		http.Error(w, "UI not found", http.StatusInternalServerError)
+		jsonError(w, "UI not found", http.StatusInternalServerError)
 		return
 	}
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
@@ -117,14 +128,14 @@ func handleUI(w http.ResponseWriter, r *http.Request) {
 func proxyRequest(w http.ResponseWriter, r *http.Request, target string) {
 	req, err := http.NewRequestWithContext(r.Context(), r.Method, target, r.Body)
 	if err != nil {
-		http.Error(w, "proxy error", http.StatusInternalServerError)
+		jsonError(w, "proxy error", http.StatusInternalServerError)
 		return
 	}
 	req.Header.Set("Content-Type", r.Header.Get("Content-Type"))
 	resp, err := httpClient.Do(req)
 	if err != nil {
 		log.Printf("proxy error to %s: %v", target, err)
-		http.Error(w, `{"error":"upstream unreachable"}`, http.StatusBadGateway)
+		jsonError(w, "upstream unreachable", http.StatusBadGateway)
 		return
 	}
 	defer resp.Body.Close()
@@ -138,4 +149,3 @@ func proxyRequest(w http.ResponseWriter, r *http.Request, target string) {
 	w.WriteHeader(resp.StatusCode)
 	io.Copy(w, resp.Body)
 }
-

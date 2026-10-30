@@ -21,6 +21,25 @@ func newTestServer(t *testing.T) *httptest.Server {
 	return httptest.NewServer(mux)
 }
 
+func assertStatus(t *testing.T, code int, expected int, context string) {
+	t.Helper()
+	if code != expected {
+		t.Errorf("%s: expected %d, got %d", context, expected, code)
+	}
+}
+
+func assertJSONError(t *testing.T, resp *http.Response) {
+	t.Helper()
+	body, _ := io.ReadAll(resp.Body)
+	ct := resp.Header.Get("Content-Type")
+	if !strings.Contains(ct, "application/json") {
+		t.Errorf("expected JSON content-type, got %s", ct)
+	}
+	if !strings.Contains(string(body), `"error"`) {
+		t.Errorf("expected JSON error body, got: %s", body)
+	}
+}
+
 func TestHealthz(t *testing.T) {
 	ts := newTestServer(t)
 	defer ts.Close()
@@ -31,9 +50,7 @@ func TestHealthz(t *testing.T) {
 	}
 	defer resp.Body.Close()
 
-	if resp.StatusCode != http.StatusOK {
-		t.Errorf("expected 200, got %d", resp.StatusCode)
-	}
+	assertStatus(t, resp.StatusCode, http.StatusOK, "healthz GET")
 	body, _ := io.ReadAll(resp.Body)
 	if string(body) != `{"status":"ok"}` {
 		t.Errorf("unexpected body: %s", body)
@@ -44,14 +61,61 @@ func TestHealthzMethodNotAllowed(t *testing.T) {
 	ts := newTestServer(t)
 	defer ts.Close()
 
-	resp, err := http.Post(ts.URL+"/healthz", "text/plain", nil)
+	for _, method := range []string{http.MethodPost, http.MethodPut, http.MethodDelete, http.MethodPatch} {
+		req, _ := http.NewRequest(method, ts.URL+"/healthz", nil)
+		resp, err := http.DefaultClient.Do(req)
+		if err != nil {
+			t.Fatal(err)
+		}
+		assertStatus(t, resp.StatusCode, http.StatusMethodNotAllowed, "healthz "+method)
+		assertJSONError(t, resp)
+		resp.Body.Close()
+	}
+}
+
+func TestBatchGetMethod(t *testing.T) {
+	ts := newTestServer(t)
+	defer ts.Close()
+
+	for _, method := range []string{http.MethodPost, http.MethodPut, http.MethodDelete, http.MethodPatch} {
+		req, _ := http.NewRequest(method, ts.URL+"/api/batch", nil)
+		resp, err := http.DefaultClient.Do(req)
+		if err != nil {
+			t.Fatal(err)
+		}
+		assertStatus(t, resp.StatusCode, http.StatusMethodNotAllowed, "/api/batch "+method)
+		assertJSONError(t, resp)
+		resp.Body.Close()
+	}
+}
+
+func TestBatchGetProxyUpstreamError(t *testing.T) {
+	ts := newTestServer(t)
+	defer ts.Close()
+
+	resp, err := http.Get(ts.URL + "/api/batch")
 	if err != nil {
 		t.Fatal(err)
 	}
 	defer resp.Body.Close()
 
-	if resp.StatusCode != http.StatusMethodNotAllowed {
-		t.Errorf("expected 405, got %d", resp.StatusCode)
+	assertStatus(t, resp.StatusCode, http.StatusBadGateway, "/api/batch GET proxy")
+	assertJSONError(t, resp)
+}
+
+func TestAnalyzeMethodValidation(t *testing.T) {
+	ts := newTestServer(t)
+	defer ts.Close()
+
+	for _, method := range []string{http.MethodGet, http.MethodPut, http.MethodDelete, http.MethodPatch} {
+		req, _ := http.NewRequest(method, ts.URL+"/api/batch/analyze", nil)
+		resp, err := http.DefaultClient.Do(req)
+		if err != nil {
+			t.Fatal(err)
+		}
+		assertStatus(t, resp.StatusCode, http.StatusMethodNotAllowed, "/api/batch/analyze "+method)
+		assertJSONError(t, resp)
+		resp.Body.Close()
 	}
 }
 
@@ -65,9 +129,7 @@ func TestUI(t *testing.T) {
 	}
 	defer resp.Body.Close()
 
-	if resp.StatusCode != http.StatusOK {
-		t.Errorf("expected 200, got %d", resp.StatusCode)
-	}
+	assertStatus(t, resp.StatusCode, http.StatusOK, "GET /")
 	ct := resp.Header.Get("Content-Type")
 	if !strings.Contains(ct, "text/html") {
 		t.Errorf("expected text/html, got %s", ct)
@@ -91,131 +153,77 @@ func TestUINotFoundArbitraryPath(t *testing.T) {
 	}
 	defer resp.Body.Close()
 
-	if resp.StatusCode != http.StatusNotFound {
-		t.Errorf("expected 404 for arbitrary path, got %d", resp.StatusCode)
-	}
-}
-
-func TestAssetPathValidation(t *testing.T) {
-	ts := newTestServer(t)
-	defer ts.Close()
-
-	resp, err := http.Get(ts.URL + "/assets/../../etc/passwd")
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusNotFound {
-		t.Errorf("expected 404 for path traversal, got %d", resp.StatusCode)
-	}
-}
-
-func TestAssetPathInvalidPrefix(t *testing.T) {
-	ts := newTestServer(t)
-	defer ts.Close()
-
-	resp, err := http.Get(ts.URL + "/assets/other-file")
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusNotFound {
-		t.Errorf("expected 404 for non-item asset prefix, got %d", resp.StatusCode)
-	}
-}
-
-func TestCardResearchPathValidation(t *testing.T) {
-	ts := newTestServer(t)
-	defer ts.Close()
-
-	resp, err := http.Post(ts.URL+"/api/cards/item-001/research", "application/json", nil)
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer resp.Body.Close()
-
-	resp2, err := http.Post(ts.URL+"/api/cards/item-001/bad", "application/json", nil)
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer resp2.Body.Close()
-	if resp2.StatusCode != http.StatusNotFound {
-		t.Errorf("expected 404 for invalid research path, got %d", resp2.StatusCode)
-	}
-}
-
-func TestCardResearchPathWithoutItemPrefix(t *testing.T) {
-	ts := newTestServer(t)
-	defer ts.Close()
-
-	resp, err := http.Post(ts.URL+"/api/cards/bad-001/research", "application/json", nil)
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer resp.Body.Close()
-	if resp.StatusCode != http.StatusNotFound {
-		t.Errorf("expected 404 for non-item prefix, got %d", resp.StatusCode)
-	}
-}
-
-func TestAnalyzeMethodValidation(t *testing.T) {
-	ts := newTestServer(t)
-	defer ts.Close()
-
-	resp, err := http.Get(ts.URL + "/api/batch/analyze")
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer resp.Body.Close()
-	if resp.StatusCode != http.StatusMethodNotAllowed {
-		t.Errorf("expected 405 for GET analyze, got %d", resp.StatusCode)
-	}
-}
-
-func TestBatchProxy(t *testing.T) {
-	ts := newTestServer(t)
-	defer ts.Close()
-
-	resp, err := http.Get(ts.URL + "/api/batch")
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusBadGateway {
-		t.Errorf("expected 502 for unreachable upstream, got %d", resp.StatusCode)
-	}
-}
-
-func TestArbitraryProxyRejection(t *testing.T) {
-	ts := newTestServer(t)
-	defer ts.Close()
-
-	resp, err := http.Get(ts.URL + "/api/unknown-endpoint")
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusNotFound {
-		t.Errorf("expected 404 for unknown route, got %d", resp.StatusCode)
-	}
+	assertStatus(t, resp.StatusCode, http.StatusNotFound, "arbitrary path")
 }
 
 func TestUIMethodNotAllowed(t *testing.T) {
 	ts := newTestServer(t)
 	defer ts.Close()
 
-	resp, err := http.Post(ts.URL+"/", "text/plain", nil)
+	for _, method := range []string{http.MethodPost, http.MethodPut, http.MethodDelete, http.MethodPatch} {
+		req, _ := http.NewRequest(method, ts.URL+"/", nil)
+		resp, err := http.DefaultClient.Do(req)
+		if err != nil {
+			t.Fatal(err)
+		}
+		assertStatus(t, resp.StatusCode, http.StatusMethodNotAllowed, "/ "+method)
+		assertJSONError(t, resp)
+		resp.Body.Close()
+	}
+}
+
+func TestAssetExactItemNumeric(t *testing.T) {
+	ts := newTestServer(t)
+	defer ts.Close()
+
+	resp, err := http.Get(ts.URL + "/assets/item-001")
 	if err != nil {
 		t.Fatal(err)
 	}
 	defer resp.Body.Close()
+	assertStatus(t, resp.StatusCode, http.StatusBadGateway, "valid asset path")
+	assertJSONError(t, resp)
+}
 
-	if resp.StatusCode != http.StatusMethodNotAllowed {
-		t.Errorf("expected 405 for POST /, got %d", resp.StatusCode)
+func TestAssetPathInvalidPrefixes(t *testing.T) {
+	ts := newTestServer(t)
+	defer ts.Close()
+
+	paths := []string{
+		"/assets/other-file",
+		"/assets/item-abc",
+		"/assets/item-",
+		"/assets/item-001a",
+		"/assets/image.jpg",
+	}
+	for _, p := range paths {
+		resp, err := http.Get(ts.URL + p)
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer resp.Body.Close()
+		assertStatus(t, resp.StatusCode, http.StatusNotFound, "invalid asset prefix: "+p)
+		assertJSONError(t, resp)
+	}
+}
+
+func TestAssetPathTraversalSanitized(t *testing.T) {
+	ts := newTestServer(t)
+	defer ts.Close()
+
+	paths := []string{
+		"/assets/../../etc/passwd",
+		"/assets/item-001/../secret",
+	}
+	for _, p := range paths {
+		resp, err := http.Get(ts.URL + p)
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer resp.Body.Close()
+		if resp.StatusCode != http.StatusNotFound {
+			t.Errorf("expected 404 for traversal path %s, got %d", p, resp.StatusCode)
+		}
 	}
 }
 
@@ -223,14 +231,42 @@ func TestAssetMethodNotAllowed(t *testing.T) {
 	ts := newTestServer(t)
 	defer ts.Close()
 
-	resp, err := http.Post(ts.URL+"/assets/item-001", "text/plain", nil)
-	if err != nil {
-		t.Fatal(err)
+	for _, method := range []string{http.MethodPost, http.MethodPut, http.MethodDelete, http.MethodPatch} {
+		req, _ := http.NewRequest(method, ts.URL+"/assets/item-001", nil)
+		resp, err := http.DefaultClient.Do(req)
+		if err != nil {
+			t.Fatal(err)
+		}
+		assertStatus(t, resp.StatusCode, http.StatusMethodNotAllowed, "assets "+method)
+		assertJSONError(t, resp)
+		resp.Body.Close()
 	}
-	defer resp.Body.Close()
+}
 
-	if resp.StatusCode != http.StatusMethodNotAllowed {
-		t.Errorf("expected 405 for POST /assets/, got %d", resp.StatusCode)
+func TestCardResearchExactPattern(t *testing.T) {
+	ts := newTestServer(t)
+	defer ts.Close()
+
+	invalidPaths := []string{
+		"/api/cards/item-001",
+		"/api/cards/item-001/research/extra",
+		"/api/cards/item-abc/research",
+		"/api/cards/item-/research",
+		"/api/cards/item-001a/research",
+		"/api/cards/bad-001/research",
+		"/api/cards/item-001/research%00",
+		"/api/cards/item-001/../research",
+	}
+	for _, p := range invalidPaths {
+		req, _ := http.NewRequest(http.MethodPost, ts.URL+p, nil)
+		req.Header.Set("Content-Type", "application/json")
+		resp, err := http.DefaultClient.Do(req)
+		if err != nil {
+			t.Fatal(err)
+		}
+		assertStatus(t, resp.StatusCode, http.StatusNotFound, "invalid research: "+p)
+		assertJSONError(t, resp)
+		resp.Body.Close()
 	}
 }
 
@@ -238,13 +274,80 @@ func TestCardResearchMethodNotAllowed(t *testing.T) {
 	ts := newTestServer(t)
 	defer ts.Close()
 
-	resp, err := http.Get(ts.URL + "/api/cards/item-001/research")
+	for _, method := range []string{http.MethodGet, http.MethodPut, http.MethodDelete, http.MethodPatch} {
+		req, _ := http.NewRequest(method, ts.URL+"/api/cards/item-001/research", nil)
+		resp, err := http.DefaultClient.Do(req)
+		if err != nil {
+			t.Fatal(err)
+		}
+		assertStatus(t, resp.StatusCode, http.StatusMethodNotAllowed, "research "+method)
+		assertJSONError(t, resp)
+		resp.Body.Close()
+	}
+}
+
+func TestArbitraryProxyRejection(t *testing.T) {
+	ts := newTestServer(t)
+	defer ts.Close()
+
+	paths := []string{
+		"/api/unknown",
+		"/api/cards/../../secret",
+		"/admin",
+		"/.env",
+		"/wp-admin",
+	}
+	for _, p := range paths {
+		resp, err := http.Get(ts.URL + p)
+		if err != nil {
+			t.Fatal(err)
+		}
+		assertStatus(t, resp.StatusCode, http.StatusNotFound, "arbitrary: "+p)
+		resp.Body.Close()
+	}
+}
+
+func TestProxyErrorJSONBody(t *testing.T) {
+	ts := newTestServer(t)
+	defer ts.Close()
+
+	paths := []struct {
+		url    string
+		method string
+	}{
+		{"/api/batch", http.MethodGet},
+		{"/api/batch/analyze", http.MethodPost},
+		{"/api/cards/item-001/research", http.MethodPost},
+		{"/assets/item-001", http.MethodGet},
+	}
+	for _, p := range paths {
+		req, _ := http.NewRequest(p.method, ts.URL+p.url, nil)
+		if p.method == http.MethodPost {
+			req.Header.Set("Content-Type", "application/json")
+		}
+		resp, err := http.DefaultClient.Do(req)
+		if err != nil {
+			t.Fatal(err)
+		}
+		assertStatus(t, resp.StatusCode, http.StatusBadGateway, p.method+" "+p.url)
+		assertJSONError(t, resp)
+		resp.Body.Close()
+	}
+}
+
+func TestHeadUI(t *testing.T) {
+	ts := newTestServer(t)
+	defer ts.Close()
+
+	req, _ := http.NewRequest(http.MethodHead, ts.URL+"/", nil)
+	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		t.Fatal(err)
 	}
 	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusMethodNotAllowed {
-		t.Errorf("expected 405 for GET research, got %d", resp.StatusCode)
+	assertStatus(t, resp.StatusCode, http.StatusOK, "HEAD /")
+	ct := resp.Header.Get("Content-Type")
+	if !strings.Contains(ct, "text/html") {
+		t.Errorf("expected text/html, got %s", ct)
 	}
 }
