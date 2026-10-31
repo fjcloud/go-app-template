@@ -16,10 +16,10 @@ import (
 var static embed.FS
 
 var (
-	cardScoutURL    string
-	httpClient      = &http.Client{Timeout: 30 * time.Second}
-	reAssetItem     = regexp.MustCompile(`^/assets/item-\d+$`)
-	reResearch      = regexp.MustCompile(`^/api/cards/item-\d+/research$`)
+	cardScoutURL string
+	httpClient   = &http.Client{Timeout: 30 * time.Second}
+	reAssetItem  = regexp.MustCompile(`^/assets/item-\d{3}$`)
+	reResearch   = regexp.MustCompile(`^/api/cards/item-\d{3}/research$`)
 )
 
 func main() {

@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"strings"
+	"sync/atomic"
 	"testing"
 )
 
@@ -194,6 +195,8 @@ func TestAssetPathInvalidPrefixes(t *testing.T) {
 		"/assets/item-abc",
 		"/assets/item-",
 		"/assets/item-001a",
+		"/assets/item-1",
+		"/assets/item-0001",
 		"/assets/image.jpg",
 	}
 	for _, p := range paths {
@@ -246,6 +249,17 @@ func TestAssetMethodNotAllowed(t *testing.T) {
 func TestCardResearchExactPattern(t *testing.T) {
 	ts := newTestServer(t)
 	defer ts.Close()
+	var forwarded atomic.Int32
+	upstream := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		forwarded.Add(1)
+		w.WriteHeader(http.StatusOK)
+	}))
+	defer upstream.Close()
+	cardScoutURL = upstream.URL
+	// Observe the mux's canonical-path redirect without following it as a GET.
+	client := &http.Client{CheckRedirect: func(*http.Request, []*http.Request) error {
+		return http.ErrUseLastResponse
+	}}
 
 	invalidPaths := []string{
 		"/api/cards/item-001",
@@ -253,6 +267,8 @@ func TestCardResearchExactPattern(t *testing.T) {
 		"/api/cards/item-abc/research",
 		"/api/cards/item-/research",
 		"/api/cards/item-001a/research",
+		"/api/cards/item-1/research",
+		"/api/cards/item-0001/research",
 		"/api/cards/bad-001/research",
 		"/api/cards/item-001/research%00",
 		"/api/cards/item-001/../research",
@@ -260,13 +276,20 @@ func TestCardResearchExactPattern(t *testing.T) {
 	for _, p := range invalidPaths {
 		req, _ := http.NewRequest(http.MethodPost, ts.URL+p, nil)
 		req.Header.Set("Content-Type", "application/json")
-		resp, err := http.DefaultClient.Do(req)
+		resp, err := client.Do(req)
 		if err != nil {
 			t.Fatal(err)
 		}
-		assertStatus(t, resp.StatusCode, http.StatusNotFound, "invalid research: "+p)
-		assertJSONError(t, resp)
+		if strings.Contains(p, "/../") {
+			assertStatus(t, resp.StatusCode, http.StatusMovedPermanently, "canonical research path: "+p)
+		} else {
+			assertStatus(t, resp.StatusCode, http.StatusNotFound, "invalid research: "+p)
+			assertJSONError(t, resp)
+		}
 		resp.Body.Close()
+	}
+	if forwarded.Load() != 0 {
+		t.Fatalf("invalid research paths reached the backend %d times", forwarded.Load())
 	}
 }
 
