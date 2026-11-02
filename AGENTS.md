@@ -63,7 +63,7 @@ against its image parameter before buildah; do not bypass this validation.
 
 Use the existing namespaces `${APP_NAME}-build` and `${APP_NAME}-dev`. Never use namespace `default` for the app, Argo CD, or the Application.
 
-1. If `git config user.email` is empty: `git config user.email "dev@workshop.local"` and `git config user.name "developer"`. Then `gitpop init --host "$GIT_SERVER" --name "$APP_NAME"`, run `git branch -M main` for the personal repository, commit, push `main`.
+1. First delivery only: if `origin` still points to the GitHub template, run `git remote remove origin` before `gitpop init`. This removes stale template tracking references; it does not delete the GitHub repository. If `git config user.email` is empty: `git config user.email "dev@workshop.local"` and `git config user.name "developer"`. Then `gitpop init --host "$GIT_SERVER" --name "$APP_NAME"`, run `git branch -M main` for the personal repository, commit, and `git push -u origin main`. Do not rebase the generated app onto the template's old `origin/main`. Reuse the personal origin for later deliveries.
 2. In `${APP_NAME}-build`: use the prepared `pipeline` service account and `oc apply -k pipeline/base -n ${APP_NAME}-build`. Start `build-app` with `oc create -f -` (do **not** use `oc create pipelinerun --param` — this `oc` rejects it):
 
 ```
@@ -140,5 +140,6 @@ model key or Kubernetes API access; it only proxies the fixed Card Scout API.
 Keep technical APP_NAME `signal-desk`. All UI and errors must be in English.
 The platform injects `CARD_SCOUT_URL` through `signal-desk-config`. Use it on the
 backend only. Do not implement inference, price scraping, MCP or tracing again.
-Run go test -race ./... and go vet ./... before shipping. Chromium, if available,
+Run CGO_ENABLED=1 go test -race ./... and go vet ./... before shipping.
+Use CGO_ENABLED=0 only for the production build, not race tests. Chromium, if available,
 must use --use-mock-keychain. Describe actual validation and visible failures.
