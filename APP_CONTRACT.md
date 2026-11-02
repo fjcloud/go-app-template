@@ -60,7 +60,9 @@ by the generated app. Use `LISTEN_ADDR` (default `:8080`).
 ## API to proxy
 
 Preserve upstream HTTP status, JSON errors and image content types. Use bounded
-requests/timeouts. Only proxy these fixed routes to the configured platform;
+requests/timeouts: allow up to 210 seconds for a price research request (the
+native agent can take 180 seconds), and keep server/browser deadlines compatible.
+Only proxy these fixed routes to the configured platform;
 never accept an arbitrary caller URL or create a public general-purpose proxy.
 
 | Application route | Prepared platform route |
