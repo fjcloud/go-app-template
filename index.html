@@ -241,7 +241,7 @@ function renderGrid() {
         researchInfo+
       '</div>'+
       '<div class="card-actions">'+
-        (canCheck ? '<button class="btn btn-primary" onclick="checkPrice(\''+htmlEscape(it.id)+'\',\''+htmlEscape(it.name||'')+'\')">Check price</button>' : '<button class="btn btn-outline" disabled>Check price</button>')+
+        (canCheck ? '<button class="btn btn-primary" data-check-price="'+htmlEscape(it.id)+'">Check price</button>' : '<button class="btn btn-outline" disabled>Check price</button>')+
       '</div>'+
     '</div>';
   }).join('');
@@ -252,7 +252,9 @@ function showMore() { state.showing += 12; renderGrid(); }
 
 function htmlEscape(s) { if (!s) return ''; return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
 
-async function checkPrice(id, cardName) {
+async function checkPrice(id) {
+  var it = state.items[id];
+  var cardName = it ? it.name || 'Unknown' : 'Unknown';
   var panel = document.getElementById('price-panel');
   if (state.researching) return;
   state.researching = id;
@@ -306,6 +308,10 @@ restoreFilter();
     if (p.getAttribute('data-filter') === state.filter) p.classList.add('active');
   });
 })();
+document.getElementById('grid').addEventListener('click', function(e) {
+  var btn = e.target.closest('[data-check-price]');
+  if (btn) checkPrice(btn.getAttribute('data-check-price'));
+});
 loadBatch();
 </script>
 </body>
