@@ -32,6 +32,8 @@ A mixed box of cards → Analyze batch → Ranked cards → Check price.
   infer prices from the agent prose; keep that prose out of the price display.
 - Keep loading, partial results, failed items, retry and empty states visible.
   Do not turn model/network failures into fabricated classifications or prices.
+- Names can contain apostrophes, such as **Professor's Research**. Bind events
+  without interpolating catalogue text into inline JavaScript handlers.
 - No login, microphone, uploads, portfolio, charts, trading, news feed or API-key
   form. Use plain HTML/CSS/JavaScript, no frontend framework or CDN dependency.
 
