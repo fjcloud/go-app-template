@@ -107,7 +107,7 @@ Before creating the Argo CD Application, also verify the pushed tag exists:
 `oc get imagestreamtag "${APP_NAME}:latest" -n "${APP_NAME}-build" -o name`.
 Never start Argo CD delivery before the build and this registry check succeed.
 
-3. Image pull permissions are already prepared by the platform. Do not add RBAC or SCC grants. Verify the preconfigured Deployment image. In `${APP_NAME}-dev`: `oc apply -k gitops/base -n ${APP_NAME}-dev`. Create the Argo CD Application **in ${APP_NAME}-dev** (destination namespace `${APP_NAME}-dev`, repo origin, path `deploy/base`, auto-sync). Wait for the matching Git revision to be Synced / Healthy and the Deployment rollout to finish. Verify its running image equals IMAGE. Only then print app + `argocd-server` Route URLs.
+3. Image pull permissions are already prepared by the platform. Do not add RBAC or SCC grants. Verify the preconfigured Deployment image. In `${APP_NAME}-dev`: `oc apply -k gitops/base -n ${APP_NAME}-dev`, then `oc wait argocd/argocd -n ${APP_NAME}-dev --for=jsonpath='{.status.phase}'=Available --timeout=600s`. This waits for the first Argo CD controllers before asking them to compare the repository. Create the Argo CD Application **in ${APP_NAME}-dev** (destination namespace `${APP_NAME}-dev`, repo origin, path `deploy/base`, auto-sync). Wait for the matching Git revision to be Synced / Healthy and the Deployment rollout to finish. Verify its running image equals IMAGE. Only then print app + `argocd-server` Route URLs.
 
 Check the actual fields, not condition names (Argo CD has no Synced condition):
 

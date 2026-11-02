@@ -64,6 +64,10 @@ requests/timeouts: allow up to 210 seconds for a price research request (the
 native agent can take 180 seconds), and keep server/browser deadlines compatible.
 Only proxy these fixed routes to the configured platform;
 never accept an arbitrary caller URL or create a public general-purpose proxy.
+Item IDs contain exactly three digits (`item-039`). Serve HTML only at `/`;
+unknown paths return 404. Preserve redirects without following them. Initialize
+shared proxy state before serving requests, and test concurrent image requests
+with the race detector.
 
 | Application route | Prepared platform route |
 | --- | --- |
