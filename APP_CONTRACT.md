@@ -90,7 +90,7 @@ with the race detector.
 
 ```json
 {
-  "dataset": {"name":"Mixed-era collection","items":57,"pokemon_cards":54,"controls":3,"years":"1998–2023","snapshot_at":"2026-10-30T15:30:47.498665+00:00","identity_method":"Known catalogue references in the prepared dataset"},
+  "dataset": {"name":"Mixed-era collection","items":57,"pokemon_cards":54,"controls":3,"years":"1998–2023","snapshot_at":"2026-11-02T15:21:34.596909+00:00","identity_method":"Known catalogue references in the prepared dataset"},
   "running": false, "completed": 1, "failed": 0,
   "trace_id": "tr-example", "trace_url": "",
   "items": [{"id":"item-039","image_url":"/assets/item-039","name":"Toedscool","set_name":"Scarlet & Violet","year":"2023","status":"done","error":null,"kind":"pokemon_tcg","rarity":"rare_or_higher","needs_review":false,"probabilities":{},"research":null}]
