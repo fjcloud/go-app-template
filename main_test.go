@@ -7,24 +7,23 @@ import (
 	"net/http/httptest"
 	"os"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 )
 
-func newTestProxy() *proxyHandler {
-	return &proxyHandler{baseURL: "http://127.0.0.1:19999"}
+func makeRouter(backendURL string) http.Handler {
+	return newRouter(backendURL)
 }
 
 func TestHealthz(t *testing.T) {
+	os.Setenv("CARD_SCOUT_URL", "http://localhost")
+	defer os.Unsetenv("CARD_SCOUT_URL")
+
+	router := makeRouter("http://localhost")
 	req := httptest.NewRequest("GET", "/healthz", nil)
 	w := httptest.NewRecorder()
-
-	mux := http.NewServeMux()
-	mux.HandleFunc("GET /healthz", func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "application/json")
-		w.Write([]byte(`{"status":"ok"}`))
-	})
-	mux.ServeHTTP(w, req)
+	router.ServeHTTP(w, req)
 
 	resp := w.Result()
 	if resp.StatusCode != 200 {
@@ -41,15 +40,10 @@ func TestHealthz(t *testing.T) {
 }
 
 func TestIndexReturnsHTML(t *testing.T) {
+	router := makeRouter("http://localhost")
 	req := httptest.NewRequest("GET", "/", nil)
 	w := httptest.NewRecorder()
-
-	mux := http.NewServeMux()
-	mux.HandleFunc("GET /", func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "text/html; charset=utf-8")
-		http.ServeFileFS(w, r, ui, "index.html")
-	})
-	mux.ServeHTTP(w, req)
+	router.ServeHTTP(w, req)
 
 	resp := w.Result()
 	if resp.StatusCode != 200 {
@@ -64,6 +58,38 @@ func TestIndexReturnsHTML(t *testing.T) {
 	}
 }
 
+func TestUnknownRouteReturns404Not200(t *testing.T) {
+	router := makeRouter("http://localhost")
+
+	cases := []struct {
+		method, path string
+	}{
+		{"GET", "/api/not-a-card-scout-route"},
+		{"POST", "/api/secret"},
+		{"GET", "/api/cards"},
+		{"POST", "/api/batch/delete"},
+		{"GET", "/proxy?url=https://evil.com"},
+		{"GET", "/assets/item-001/extra"},
+		{"GET", "/assets/item-abcd"},
+		{"GET", "/assets/item-01"},
+		{"POST", "/api/cards/item-1/research"},
+		{"POST", "/api/cards/item-1234/research"},
+		{"GET", "/random-page"},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.method+" "+tc.path, func(t *testing.T) {
+			req := httptest.NewRequest(tc.method, tc.path, nil)
+			w := httptest.NewRecorder()
+			router.ServeHTTP(w, req)
+
+			if w.Result().StatusCode != 404 {
+				t.Errorf("expected 404 for %s %s, got %d", tc.method, tc.path, w.Result().StatusCode)
+			}
+		})
+	}
+}
+
 func TestProxyForwardsStatusAndBody(t *testing.T) {
 	backend := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
@@ -72,10 +98,10 @@ func TestProxyForwardsStatusAndBody(t *testing.T) {
 	}))
 	defer backend.Close()
 
-	p := &proxyHandler{baseURL: backend.URL}
+	router := makeRouter(backend.URL)
 	req := httptest.NewRequest("GET", "/api/batch", nil)
 	w := httptest.NewRecorder()
-	p.forward(w, req)
+	router.ServeHTTP(w, req)
 
 	resp := w.Result()
 	if resp.StatusCode != http.StatusTeapot {
@@ -97,14 +123,32 @@ func TestProxy404Error(t *testing.T) {
 	}))
 	defer backend.Close()
 
-	p := &proxyHandler{baseURL: backend.URL}
+	router := makeRouter(backend.URL)
 	req := httptest.NewRequest("GET", "/api/batch", nil)
 	w := httptest.NewRecorder()
-	p.forward(w, req)
+	router.ServeHTTP(w, req)
 
 	resp := w.Result()
 	if resp.StatusCode != 404 {
 		t.Fatalf("expected 404, got %d", resp.StatusCode)
+	}
+}
+
+func TestProxyPreservesRedirectNoFollow(t *testing.T) {
+	backend := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Location", "/other")
+		w.WriteHeader(http.StatusTemporaryRedirect)
+	}))
+	defer backend.Close()
+
+	router := makeRouter(backend.URL)
+	req := httptest.NewRequest("GET", "/api/batch", nil)
+	w := httptest.NewRecorder()
+	router.ServeHTTP(w, req)
+
+	resp := w.Result()
+	if resp.StatusCode != http.StatusTemporaryRedirect {
+		t.Fatalf("expected 307, got %d", resp.StatusCode)
 	}
 }
 
@@ -115,13 +159,10 @@ func TestProxyImagePreservesContentType(t *testing.T) {
 	}))
 	defer backend.Close()
 
-	p := &proxyHandler{baseURL: backend.URL}
+	router := makeRouter(backend.URL)
 	req := httptest.NewRequest("GET", "/assets/item-001", nil)
 	w := httptest.NewRecorder()
-
-	mux := http.NewServeMux()
-	mux.HandleFunc("GET /assets/{id...}", p.forwardAsset)
-	mux.ServeHTTP(w, req)
+	router.ServeHTTP(w, req)
 
 	resp := w.Result()
 	if resp.StatusCode != 200 {
@@ -136,26 +177,53 @@ func TestProxyImagePreservesContentType(t *testing.T) {
 	}
 }
 
+func TestConcurrentImageRequestsNoDataRace(t *testing.T) {
+	backend := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "image/png")
+		w.Write([]byte{0x89, 'P', 'N', 'G', 0x0d, 0x0a, 0x1a, 0x0a})
+	}))
+	defer backend.Close()
+
+	router := makeRouter(backend.URL)
+
+	var wg sync.WaitGroup
+	for i := 0; i < 24; i++ {
+		wg.Add(1)
+		go func(i int) {
+			defer wg.Done()
+			req := httptest.NewRequest("GET", "/assets/item-001", nil)
+			w := httptest.NewRecorder()
+			router.ServeHTTP(w, req)
+			if w.Result().StatusCode != 200 {
+				t.Errorf("request %d: expected 200, got %d", i, w.Result().StatusCode)
+			}
+		}(i)
+	}
+	wg.Wait()
+}
+
 func TestResearchRejectsInvalidPath(t *testing.T) {
 	backend := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		t.Error("backend should not be called")
 	}))
 	defer backend.Close()
 
-	p := &proxyHandler{baseURL: backend.URL}
+	router := makeRouter(backend.URL)
 
 	cases := []string{
 		"/api/cards/item-001/extra",
 		"/api/cards/item-001/",
 		"/api/cards/foo/research",
 		"/api/cards/item-abc/research",
+		"/api/cards/item-01/research",
+		"/api/cards/item-12345/research",
 	}
 
 	for _, path := range cases {
 		t.Run(path, func(t *testing.T) {
 			req := httptest.NewRequest("POST", path, nil)
 			w := httptest.NewRecorder()
-			p.forwardResearch(w, req)
+			router.ServeHTTP(w, req)
 
 			if w.Result().StatusCode != 404 {
 				t.Errorf("expected 404 for %q, got %d", path, w.Result().StatusCode)
@@ -177,13 +245,10 @@ func TestResearchForwardsValidPath(t *testing.T) {
 	}))
 	defer backend.Close()
 
-	p := &proxyHandler{baseURL: backend.URL}
+	router := makeRouter(backend.URL)
 	req := httptest.NewRequest("POST", "/api/cards/item-042/research", nil)
 	w := httptest.NewRecorder()
-
-	mux := http.NewServeMux()
-	mux.HandleFunc("POST /api/cards/{id...}", p.forwardResearch)
-	mux.ServeHTTP(w, req)
+	router.ServeHTTP(w, req)
 
 	resp := w.Result()
 	if resp.StatusCode != 200 {
@@ -196,10 +261,10 @@ func TestResearchForwardsValidPath(t *testing.T) {
 }
 
 func TestProxyUpstreamUnavailable(t *testing.T) {
-	p := &proxyHandler{baseURL: "http://127.0.0.1:19999"}
+	router := makeRouter("http://127.0.0.1:19999")
 	req := httptest.NewRequest("GET", "/api/batch", nil)
 	w := httptest.NewRecorder()
-	p.forward(w, req)
+	router.ServeHTTP(w, req)
 
 	resp := w.Result()
 	if resp.StatusCode != 502 {
@@ -211,52 +276,22 @@ func TestProxyUpstreamUnavailable(t *testing.T) {
 	}
 }
 
-func TestRejectArbitraryPath(t *testing.T) {
-	backend := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		t.Error("backend should not be called for arbitrary paths")
-	}))
-	defer backend.Close()
-
-	p := &proxyHandler{baseURL: backend.URL}
-
-	tests := []struct {
-		method, path string
-	}{
-		{"GET", "/api/secret"},
-		{"POST", "/api/admin/keys"},
-		{"GET", "/api/cards"},
-		{"POST", "/api/batch/delete"},
-		{"GET", "/proxy?url=https://evil.com"},
-		{"GET", "/assets/item-001/extra"},
-	}
-
-	for _, tc := range tests {
-		t.Run(tc.method+" "+tc.path, func(t *testing.T) {
-			req := httptest.NewRequest(tc.method, tc.path, nil)
-			w := httptest.NewRecorder()
-
-			mux := http.NewServeMux()
-			mux.HandleFunc("GET /api/batch", p.forward)
-			mux.HandleFunc("POST /api/batch/analyze", p.forward)
-			mux.HandleFunc("GET /assets/{id...}", p.forwardAsset)
-			mux.HandleFunc("POST /api/cards/{id...}", p.forwardResearch)
-			mux.ServeHTTP(w, req)
-
-			if w.Result().StatusCode == 200 {
-				t.Errorf("expected non-200 for %s %s, got 200", tc.method, tc.path)
-			}
-		})
-	}
-}
-
 func TestContextTimeoutOnProxy(t *testing.T) {
 	backend := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		time.Sleep(5 * time.Second)
 	}))
 	defer backend.Close()
 
-	p := &proxyHandler{baseURL: backend.URL}
-	p.httpClient = &http.Client{Timeout: 50 * time.Millisecond}
+	// construct proxy directly for timeout test with a short client
+	p := &proxyHandler{
+		baseURL: backend.URL,
+		normalClient: &http.Client{
+			Timeout: 50 * time.Millisecond,
+			CheckRedirect: func(req *http.Request, via []*http.Request) error {
+				return http.ErrUseLastResponse
+			},
+		},
+	}
 
 	req := httptest.NewRequest("GET", "/api/batch", nil)
 	w := httptest.NewRecorder()
@@ -289,13 +324,10 @@ func TestResearch409Error(t *testing.T) {
 	}))
 	defer backend.Close()
 
-	p := &proxyHandler{baseURL: backend.URL}
+	router := makeRouter(backend.URL)
 	req := httptest.NewRequest("POST", "/api/cards/item-001/research", nil)
 	w := httptest.NewRecorder()
-
-	mux := http.NewServeMux()
-	mux.HandleFunc("POST /api/cards/{id...}", p.forwardResearch)
-	mux.ServeHTTP(w, req)
+	router.ServeHTTP(w, req)
 
 	resp := w.Result()
 	if resp.StatusCode != 409 {
@@ -307,21 +339,30 @@ func TestResearch409Error(t *testing.T) {
 	}
 }
 
-func TestAssetPathValidation(t *testing.T) {
+func TestAssetPathExactThreeDigits(t *testing.T) {
 	backend := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		t.Error("backend should not be called for invalid asset paths")
+		w.Header().Set("Content-Type", "image/png")
+		w.Write([]byte{0x89, 'P', 'N', 'G', 0x0d, 0x0a, 0x1a, 0x0a})
 	}))
 	defer backend.Close()
 
-	p := &proxyHandler{baseURL: backend.URL}
-	mux := http.NewServeMux()
-	mux.HandleFunc("GET /assets/{id...}", p.forwardAsset)
+	router := makeRouter(backend.URL)
 
-	req := httptest.NewRequest("GET", "/assets/item-abc", nil)
+	// Valid: exactly 3 digits
+	req := httptest.NewRequest("GET", "/assets/item-039", nil)
 	w := httptest.NewRecorder()
-	mux.ServeHTTP(w, req)
+	router.ServeHTTP(w, req)
+	if w.Result().StatusCode != 200 {
+		t.Fatalf("expected 200 for /assets/item-039, got %d", w.Result().StatusCode)
+	}
 
-	if w.Result().StatusCode != 404 {
-		t.Fatalf("expected 404 for non-numeric asset, got %d", w.Result().StatusCode)
+	// Invalid: not 3 digits
+	for _, path := range []string{"/assets/item-01", "/assets/item-1234", "/assets/item-abcd"} {
+		req := httptest.NewRequest("GET", path, nil)
+		w := httptest.NewRecorder()
+		router.ServeHTTP(w, req)
+		if w.Result().StatusCode != 404 {
+			t.Errorf("expected 404 for %s, got %d", path, w.Result().StatusCode)
+		}
 	}
 }

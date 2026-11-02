@@ -18,7 +18,6 @@ header p { font-size: 0.8rem; opacity: 0.75; margin-top: 2px; }
 .btn-primary:hover:not(:disabled) { background: #3a56d4; }
 .btn-outline { background: #fff; border: 1.5px solid #ccc; color: #333; }
 .btn-outline:hover:not(:disabled) { border-color: #888; }
-.btn-outline.active { background: #e8ecff; border-color: #4361ee; color: #4361ee; }
 .progress { font-size: 0.85rem; color: #555; margin-left: 8px; }
 .filter-bar { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; }
 .filter-pill { padding: 5px 14px; border-radius: 16px; border: 1.5px solid #ccc; background: #fff; font-size: 0.8rem; cursor: pointer; }
@@ -26,6 +25,20 @@ header p { font-size: 0.8rem; opacity: 0.75; margin-top: 2px; }
 .filter-pill.active { background: #4361ee; color: #fff; border-color: #4361ee; }
 .filter-count { font-size: 0.78rem; color: #777; margin-left: 4px; }
 .summary { font-size: 0.82rem; color: #555; margin-bottom: 12px; }
+.price-panel { background: #fff; border-radius: 10px; padding: 14px 16px; box-shadow: 0 1px 4px rgba(0,0,0,0.08); margin-bottom: 16px; display: none; }
+.price-panel.visible { display: block; }
+.price-panel h3 { font-size: 1rem; margin-bottom: 10px; color: #1a1a2e; }
+.price-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 10px; }
+.price-item { font-size: 0.82rem; }
+.price-item strong { display: block; font-size: 0.7rem; color: #888; text-transform: uppercase; letter-spacing: 0.5px; }
+.price-item .unavailable { color: #999; font-style: italic; }
+.price-links { margin-top: 10px; display: flex; gap: 12px; flex-wrap: wrap; }
+.price-links a { font-size: 0.82rem; color: #4361ee; }
+.error-msg { font-size: 0.82rem; color: #c53030; margin-top: 6px; }
+.status-pending { color: #a0aec0; }
+.status-analyzing { color: #d69e2e; }
+.status-done { color: #38a169; }
+.status-error { color: #e53e3e; }
 .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 16px; margin-bottom: 16px; }
 .card { background: #fff; border-radius: 10px; overflow: hidden; box-shadow: 0 1px 4px rgba(0,0,0,0.08); display: flex; flex-direction: column; }
 .card img { width: 100%; height: 180px; object-fit: cover; background: #eee; }
@@ -42,20 +55,6 @@ header p { font-size: 0.8rem; opacity: 0.75; margin-top: 2px; }
 .badge-na { background: #e2e8f0; color: #718096; }
 .card-actions { padding: 8px 12px; border-top: 1px solid #eee; display: flex; gap: 6px; }
 .card-actions .btn { font-size: 0.78rem; padding: 5px 12px; }
-.price-panel { margin-top: 16px; background: #fff; border-radius: 10px; padding: 14px 16px; box-shadow: 0 1px 4px rgba(0,0,0,0.08); display: none; }
-.price-panel.visible { display: block; }
-.price-panel h3 { font-size: 1rem; margin-bottom: 10px; color: #1a1a2e; }
-.price-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 10px; }
-.price-item { font-size: 0.82rem; }
-.price-item strong { display: block; font-size: 0.7rem; color: #888; text-transform: uppercase; letter-spacing: 0.5px; }
-.price-item .unavailable { color: #999; font-style: italic; }
-.price-links { margin-top: 10px; display: flex; gap: 12px; flex-wrap: wrap; }
-.price-links a { font-size: 0.82rem; color: #4361ee; }
-.error-msg { font-size: 0.82rem; color: #c53030; margin-top: 6px; }
-.status-pending { color: #a0aec0; }
-.status-analyzing { color: #d69e2e; }
-.status-done { color: #38a169; }
-.status-error { color: #e53e3e; }
 .empty-state { text-align: center; padding: 40px 20px; color: #888; font-size: 0.95rem; }
 .spinner { display: inline-block; width: 14px; height: 14px; border: 2px solid #ccc; border-top-color: #4361ee; border-radius: 50%; animation: spin 0.7s linear infinite; margin-right: 6px; vertical-align: middle; }
 @keyframes spin { to { transform: rotate(360deg); } }
@@ -74,6 +73,7 @@ header p { font-size: 0.8rem; opacity: 0.75; margin-top: 2px; }
 <div class="container">
   <div class="controls">
     <button id="analyze-btn" class="btn btn-primary" onclick="startAnalysis()">Analyze batch</button>
+    <button id="retry-btn" class="btn btn-outline" style="display:none;" onclick="loadBatch()">Retry</button>
     <span id="progress-msg" class="progress"></span>
   </div>
   <div class="filter-bar">
@@ -83,22 +83,43 @@ header p { font-size: 0.8rem; opacity: 0.75; margin-top: 2px; }
     <button class="filter-pill" data-filter="other" onclick="setFilter('other', this)">Other <span class="filter-count" id="count-other"></span></button>
   </div>
   <div class="summary" id="summary"></div>
-  <div class="grid" id="grid"></div>
-  <button id="show-more" class="btn btn-outline" style="display:none;margin:0 auto;display:block;" onclick="showMore()">Show more</button>
-  <div class="empty-state" id="empty-state" style="display:none;">No cards match this filter.</div>
   <div id="price-panel" class="price-panel"></div>
+  <div class="grid" id="grid"></div>
+  <button id="show-more" class="btn btn-outline" style="display:none;margin:0 auto;" onclick="showMore()">Show more</button>
+  <div class="empty-state" id="empty-state" style="display:none;">No cards match this filter.</div>
 </div>
 
 <script>
-let state = {items:[], running:false, completed:0, failed:0, filter:'all', showing:12, polling:null, researching:null};
+var state = {items:[], running:false, completed:0, failed:0, filter:'all', showing:12, polling:null, researching:null, batchError:false};
 
 function fmtUnavail(v) { return v===null||v===undefined ? '<span class="unavailable">Unavailable</span>' : v; }
 
+function fmtPrice(v) { return v===null||v===undefined ? '<span class="unavailable">Unavailable</span>' : (v===0 ? '0' : v); }
+
+function isSafeURL(u) { return u && typeof u==='string' && (u.startsWith('https://')||u.startsWith('http://')) && !u.startsWith('javascript:') && !u.startsWith('data:') && !u.startsWith('vbscript:'); }
+
+function restoreFilter() {
+  try { var f=localStorage.getItem('cardscout-filter'); if (f && filterFn[f]) state.filter = f; } catch(e){}
+}
+
+function saveFilter() {
+  try { localStorage.setItem('cardscout-filter', state.filter); } catch(e){}
+}
+
 async function loadBatch() {
   try {
-    let r = await fetch('/api/batch');
-    if (!r.ok) { document.getElementById('progress-msg').textContent = 'Failed to load batch.'; return; }
-    let d = await r.json();
+    var r = await fetch('/api/batch');
+    if (!r.ok) {
+      if (state.items.length === 0) {
+        document.getElementById('progress-msg').textContent = 'Failed to load batch.';
+        document.getElementById('retry-btn').style.display = 'inline-block';
+        state.batchError = true;
+      }
+      return;
+    }
+    state.batchError = false;
+    document.getElementById('retry-btn').style.display = 'none';
+    var d = await r.json();
     state.items = d.items || [];
     state.running = !!d.running;
     state.completed = d.completed || 0;
@@ -107,18 +128,21 @@ async function loadBatch() {
       (d.dataset ? d.dataset.name + ' — ' + d.dataset.items + ' items, ' + d.dataset.years : 'Card Scout');
     updateUI();
 
-    let items = state.items;
+    var items = state.items;
     document.getElementById('count-all').textContent = '(' + items.length + ')';
-    let cRare=items.filter(it=>it.kind==='pokemon_tcg' && it.rarity==='rare_or_higher').length;
-    document.getElementById('count-rare').textContent = '(' + cRare + ')';
-    let cReview=items.filter(it=>it.needs_review).length;
-    document.getElementById('count-review').textContent = '(' + cReview + ')';
-    let cOther=items.filter(it=>it.kind==='other_card' || it.kind==='not_a_card').length;
-    document.getElementById('count-other').textContent = '(' + cOther + ')';
+    document.getElementById('count-rare').textContent = '(' + items.filter(function(it){return it.kind==='pokemon_tcg' && it.rarity==='rare_or_higher'}).length + ')';
+    document.getElementById('count-review').textContent = '(' + items.filter(function(it){return it.needs_review}).length + ')';
+    document.getElementById('count-other').textContent = '(' + items.filter(function(it){return it.kind==='other_card' || it.kind==='not_a_card'}).length + ')';
 
     if (state.running) startPolling();
     else stopPolling();
-  } catch(e) { document.getElementById('progress-msg').textContent = 'Connection error.'; }
+  } catch(e) {
+    if (state.items.length === 0) {
+      document.getElementById('progress-msg').textContent = 'Connection error.';
+      document.getElementById('retry-btn').style.display = 'inline-block';
+      state.batchError = true;
+    }
+  }
 }
 
 function startPolling() {
@@ -131,17 +155,17 @@ function stopPolling() {
 }
 
 async function startAnalysis() {
-  let btn = document.getElementById('analyze-btn');
+  var btn = document.getElementById('analyze-btn');
   btn.disabled = true;
   document.getElementById('progress-msg').textContent = 'Starting analysis...';
   try {
-    let r = await fetch('/api/batch/analyze', {method:'POST'});
+    var r = await fetch('/api/batch/analyze', {method:'POST'});
     if (r.status === 202 || r.ok) {
       state.running = true;
       startPolling();
       document.getElementById('progress-msg').textContent = 'Analysis running...';
     } else {
-      let err = await r.json().catch(()=>({error:'Request failed'}));
+      var err = await r.json().catch(function(){return {error:'Request failed'}});
       document.getElementById('progress-msg').textContent = (err.error || 'Analysis request failed');
       btn.disabled = false;
     }
@@ -152,8 +176,8 @@ async function startAnalysis() {
 }
 
 function updateUI() {
-  let btn = document.getElementById('analyze-btn');
-  btn.disabled = state.running;
+  var btn = document.getElementById('analyze-btn');
+  btn.disabled = state.running || state.batchError;
   if (state.running) {
     document.getElementById('progress-msg').textContent = 'Analyzing: ' + state.completed + ' completed, ' + state.failed + ' failed...';
   } else if (state.completed > 0 || state.failed > 0) {
@@ -164,12 +188,13 @@ function updateUI() {
   renderGrid();
 }
 
-let filterFn = {all:()=>true, rare:it=>it.kind==='pokemon_tcg'&&it.rarity==='rare_or_higher',
-  review:it=>it.needs_review, other:it=>it.kind==='other_card'||it.kind==='not_a_card'};
+var filterFn = {all:function(){return true}, rare:function(it){return it.kind==='pokemon_tcg'&&it.rarity==='rare_or_higher'},
+  review:function(it){return it.needs_review}, other:function(it){return it.kind==='other_card'||it.kind==='not_a_card'}};
 
 function setFilter(f, el) {
   state.filter = f; state.showing = 12;
-  document.querySelectorAll('.filter-pill').forEach(p=>p.classList.remove('active'));
+  saveFilter();
+  document.querySelectorAll('.filter-pill').forEach(function(p){p.classList.remove('active')});
   el.classList.add('active');
   renderGrid();
 }
@@ -177,38 +202,38 @@ function setFilter(f, el) {
 function filtered() { return state.items.filter(filterFn[state.filter]); }
 
 function renderGrid() {
-  let f = filtered();
-  let visible = f.slice(0, state.showing);
-  let grid = document.getElementById('grid');
-  let empty = document.getElementById('empty-state');
-  let more = document.getElementById('show-more');
+  var f = filtered();
+  var visible = f.slice(0, state.showing);
+  var grid = document.getElementById('grid');
+  var empty = document.getElementById('empty-state');
+  var more = document.getElementById('show-more');
   document.getElementById('summary').textContent = f.length + ' cards';
   if (f.length === 0) { grid.innerHTML = ''; empty.style.display = 'block'; more.style.display = 'none'; return; }
   empty.style.display = 'none';
-  grid.innerHTML = visible.map(it=>{
-    let statusLabel = it.status || 'pending';
-    let statusClass = 'status-'+statusLabel;
-    let rarityBadge = '';
+  grid.innerHTML = visible.map(function(it){
+    var statusLabel = it.status || 'pending';
+    var statusClass = 'status-'+statusLabel;
+    var rarityBadge = '';
     if (it.rarity) {
-      let rc = it.rarity.replace(/_/g,' ').replace(/\b\w/g,l=>l.toUpperCase());
-      let bc = 'badge-uncertain';
+      var rc = it.rarity.replace(/_/g,' ').replace(/\b\w/g,function(l){return l.toUpperCase()});
+      var bc = 'badge-uncertain';
       if (it.rarity==='rare_or_higher') bc='badge-rare';
       else if (it.rarity==='uncommon') bc='badge-uncommon';
       else if (it.rarity==='common') bc='badge-common';
       else if (it.rarity==='not_applicable') bc='badge-na';
       rarityBadge = '<span class="badge '+bc+'">'+rc+'</span>';
     }
-    let kindBadge = '';
+    var kindBadge = '';
     if (it.kind==='other_card'||it.kind==='not_a_card') kindBadge = '<span class="badge badge-other">'+it.kind.replace(/_/g,' ')+'</span>';
-    let reviewBadge = it.needs_review ? '<span class="badge badge-other">Needs review</span>' : '';
-    let canCheck = it.status==='done' && it.kind==='pokemon_tcg';
-    let researchInfo = '';
+    var reviewBadge = it.needs_review ? '<span class="badge badge-other">Needs review</span>' : '';
+    var canCheck = it.status==='done' && it.kind==='pokemon_tcg';
+    var researchInfo = '';
     if (it.research) {
-      let r=it.research, trend=fmtUnavail(r.trend), avg=fmtUnavail(r.average_7d);
+      var r=it.research, trend=fmtUnavail(r.trend), avg=fmtUnavail(r.average_7d);
       researchInfo = '<div style="font-size:0.75rem;color:#555;margin-top:4px;">Trend: '+trend+' / 7d avg: '+avg+'</div>';
     }
     return '<div class="card">'+
-      '<img src="'+htmlEscape(it.image_url)+'" alt="Card" loading="lazy">'+
+      '<img src="'+htmlEscape(it.image_url||'')+'" alt="Card" loading="lazy">'+
       '<div class="card-body">'+
         '<div class="card-name">'+htmlEscape(it.name||'Unknown')+'</div>'+
         '<div class="card-set">' + htmlEscape((it.set_name||'')+' '+(it.year||'')) + '</div>'+
@@ -216,7 +241,7 @@ function renderGrid() {
         researchInfo+
       '</div>'+
       '<div class="card-actions">'+
-        (canCheck ? '<button class="btn btn-primary" onclick="checkPrice(\''+htmlEscape(it.id)+'\')">Check price</button>' : '<button class="btn btn-outline" disabled>Check price</button>')+
+        (canCheck ? '<button class="btn btn-primary" onclick="checkPrice(\''+htmlEscape(it.id)+'\',\''+htmlEscape(it.name||'')+'\')">Check price</button>' : '<button class="btn btn-outline" disabled>Check price</button>')+
       '</div>'+
     '</div>';
   }).join('');
@@ -225,48 +250,62 @@ function renderGrid() {
 
 function showMore() { state.showing += 12; renderGrid(); }
 
-function htmlEscape(s) { if (!s) return ''; return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function htmlEscape(s) { if (!s) return ''; return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
 
-async function checkPrice(id) {
-  let panel = document.getElementById('price-panel');
+async function checkPrice(id, cardName) {
+  var panel = document.getElementById('price-panel');
   if (state.researching) return;
   state.researching = id;
   panel.className = 'price-panel visible';
-  panel.innerHTML = '<h3>Checking price for '+htmlEscape(id)+'...</h3><div class="spinner"></div>';
+  var nameDisplay = htmlEscape(cardName || id);
+  panel.innerHTML = '<h3>Checking price for '+nameDisplay+'...</h3><div class="spinner"></div>';
   try {
-    let r = await fetch('/api/cards/'+id+'/research', {method:'POST'});
-    let d = await r.json();
+    var r = await fetch('/api/cards/'+encodeURIComponent(id)+'/research', {method:'POST'});
+    var d = await r.json();
     if (!r.ok) {
-      let err = (d && d.error) ? d.error : ('Request failed ('+r.status+')');
-      panel.innerHTML = '<h3>Price check</h3><div class="error-msg">'+htmlEscape(err)+'</div>';
+      var err = (d && d.error) ? d.error : ('Request failed ('+r.status+')');
+      panel.innerHTML = '<h3>'+nameDisplay+'</h3><div class="error-msg">'+htmlEscape(err)+'</div>';
     } else if (d.status==='ok') {
-      let card = d.card||{};
+      var card = d.card||{};
+      var srcLink = '';
+      var traceLink = '';
+      if (d.source_url && isSafeURL(d.source_url)) {
+        srcLink = '<a href="'+htmlEscape(d.source_url)+'" target="_blank" rel="noopener">Source</a>';
+      }
+      if (d.trace_url && isSafeURL(d.trace_url)) {
+        traceLink = '<a href="'+htmlEscape(d.trace_url)+'" target="_blank" rel="noopener">View MLflow trace</a>';
+      }
       panel.innerHTML = '<h3>'+htmlEscape(card.name||id)+'</h3>'+
         '<div class="price-grid">'+
           '<div class="price-item"><strong>Name</strong>'+htmlEscape(card.name||'—')+'</div>'+
           '<div class="price-item"><strong>Set</strong>'+htmlEscape(card.set||'—')+'</div>'+
           '<div class="price-item"><strong>Number</strong>'+htmlEscape(card.number||'—')+'</div>'+
           '<div class="price-item"><strong>Catalogue rarity</strong>'+htmlEscape(card.rarity||'—')+'</div>'+
-          '<div class="price-item"><strong>Trend</strong>'+fmtUnavail(d.trend)+'</div>'+
-          '<div class="price-item"><strong>7-day average</strong>'+fmtUnavail(d.average_7d)+'</div>'+
+          '<div class="price-item"><strong>Trend</strong>'+fmtPrice(d.trend)+'</div>'+
+          '<div class="price-item"><strong>7-day average</strong>'+fmtPrice(d.average_7d)+'</div>'+
           '<div class="price-item"><strong>Provider</strong>'+htmlEscape(d.provider||'—')+'</div>'+
           '<div class="price-item"><strong>Currency</strong>'+htmlEscape(d.currency||'—')+'</div>'+
           '<div class="price-item"><strong>Provider updated</strong>'+htmlEscape(d.provider_updated_at||'—')+'</div>'+
           '<div class="price-item"><strong>Retrieved</strong>'+htmlEscape(d.retrieved_at||'—')+'</div>'+
         '</div>'+
-        '<div class="price-links">'+
-          (d.source_url ? '<a href="'+htmlEscape(d.source_url)+'" target="_blank" rel="noopener">Source</a>' : '')+
-          (d.trace_url ? '<a href="'+htmlEscape(d.trace_url)+'" target="_blank" rel="noopener">View MLflow trace</a>' : '')+
-        '</div>';
+        '<div class="price-links">'+srcLink+traceLink+'</div>';
     } else {
-      panel.innerHTML = '<h3>Price check</h3><div class="error-msg">Unexpected response.</div>';
+      panel.innerHTML = '<h3>'+nameDisplay+'</h3><div class="error-msg">Unexpected response.</div>';
     }
   } catch(e) {
-    panel.innerHTML = '<h3>Price check</h3><div class="error-msg">Connection error: '+htmlEscape(e.message)+'</div>';
+    panel.innerHTML = '<h3>'+nameDisplay+'</h3><div class="error-msg">Connection error: '+htmlEscape(e.message)+'</div>';
   }
   state.researching = null;
 }
 
+restoreFilter();
+(function(){
+  var pills = document.querySelectorAll('.filter-pill');
+  pills.forEach(function(p){
+    p.classList.remove('active');
+    if (p.getAttribute('data-filter') === state.filter) p.classList.add('active');
+  });
+})();
 loadBatch();
 </script>
 </body>

@@ -27,6 +27,7 @@ A mixed box of cards → Analyze batch → Ranked cards → Check price.
   update date, **Source**, and **View MLflow trace** when a URL is supplied.
   Display zero as zero and null as **Unavailable**. Retain the source timestamp;
   it is not necessarily today's price. Preserve a differing D3 prediction.
+  Keep this panel before the card grid so progress, results and errors are visible.
 - Numeric fields must come from the platform's verified tool evidence. Do not
   infer prices from the agent prose; keep that prose out of the price display.
 - Keep loading, partial results, failed items, retry and empty states visible.
@@ -64,6 +65,10 @@ requests/timeouts: allow up to 210 seconds for a price research request (the
 native agent can take 180 seconds), and keep server/browser deadlines compatible.
 Only proxy these fixed routes to the configured platform;
 never accept an arbitrary caller URL or create a public general-purpose proxy.
+Item IDs contain exactly three digits (`item-039`). Serve HTML only at `/`;
+unknown paths return 404. Preserve redirects without following them. Initialize
+shared proxy state before serving requests, and test concurrent image requests
+with the race detector.
 
 | Application route | Prepared platform route |
 | --- | --- |
@@ -121,7 +126,8 @@ Keep the scaffold; do not add Python, MCP servers, databases or model clients.
 Use `go:embed` for the UI. Prefer the Go standard library and a small source
 surface. Run `go test -race ./...`, `go vet ./...`, and a local build. Meaningful
 httptest cases must cover proxy status/errors, images and rejection of arbitrary
-routes. Check the UI at mobile width and keyboard access when a browser is
+routes. Exercise the actual production router in tests; do not rebuild routing
+or return canned health responses inside the tests. Check the UI at mobile width and keyboard access when a browser is
 available. Chromium must use `--use-mock-keychain`.
 
 Follow AGENTS.md for Git → Tekton → Argo CD. Verify the exact pushed revision and
