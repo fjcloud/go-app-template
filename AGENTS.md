@@ -63,7 +63,7 @@ against its image parameter before buildah; do not bypass this validation.
 
 Use the existing namespaces `${APP_NAME}-build` and `${APP_NAME}-dev`. Never use namespace `default` for the app, Argo CD, or the Application.
 
-1. First delivery only: if `origin` still points to the GitHub template, run `git remote remove origin` before `gitpop init`. This removes stale template tracking references; it does not delete the GitHub repository. If `git config user.email` is empty: `git config user.email "dev@workshop.local"` and `git config user.name "developer"`. Then `gitpop init --host "$GIT_SERVER" --name "$APP_NAME"`, run `git branch -M main` for the personal repository, commit, and `git push -u origin main`. Do not rebase the generated app onto the template's old `origin/main`. Reuse the personal origin for later deliveries.
+1. First delivery only: if `origin` still points to the GitHub template, run `git branch --unset-upstream`, then `git remote remove origin` before `gitpop init`. This clears the template's branch configuration and stale tracking references; it does not delete the GitHub repository. If `git config user.email` is empty: `git config user.email "dev@workshop.local"` and `git config user.name "developer"`. Then `gitpop init --host "$GIT_SERVER" --name "$APP_NAME"`, run `git branch -M main` for the personal repository, commit, and `git push -u origin main`. Do not rebase the generated app onto the template's old `origin/main`. Reuse the personal origin for later deliveries.
 2. In `${APP_NAME}-build`: use the prepared `pipeline` service account and `oc apply -k pipeline/base -n ${APP_NAME}-build`. Start `build-app` with `oc create -f -` (do **not** use `oc create pipelinerun --param` — this `oc` rejects it):
 
 ```
