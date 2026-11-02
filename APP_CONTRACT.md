@@ -39,9 +39,14 @@ A mixed box of cards → Analyze batch → Ranked cards → Check price.
 
 ## Prepared dataset and platform
 
-The platform contains 48 English Pokémon cards across eight sets (1999–2023),
+The platform contains 54 Pokémon cards (53 English and one Japanese, 1998–2023),
 plus a Yu-Gi-Oh! card, a receipt and a standalone Pokémon illustration. Images
-are preloaded. D3 receives image bytes only; held-out catalogue labels are not
+are preloaded. Collector highlights include Charizard, Shining Charizard,
+Umbreon Gold Star, Shining Magikarp, Birthday Pikachu and Pikachu Illustrator.
+Collector value differs from printed rarity. Illustrator has a curated historical
+reference and no comparable market quote: show Unavailable, never an auction
+record or an invented price. Render counts from the API, not hardcoded constants.
+D3 receives image bytes only; held-out catalogue labels are not
 sent to it. Catalogue IDs are known from this curated dataset: do not claim
 that the model recognized the exact edition of an arbitrary uploaded photo.
 
@@ -85,7 +90,7 @@ with the race detector.
 
 ```json
 {
-  "dataset": {"name":"Mixed-era collection","items":51,"pokemon_cards":48,"controls":3,"years":"1999–2023","snapshot_at":"2026-10-30T15:30:47.498665+00:00","identity_method":"Known catalogue references in the prepared dataset"},
+  "dataset": {"name":"Mixed-era collection","items":57,"pokemon_cards":54,"controls":3,"years":"1998–2023","snapshot_at":"2026-10-30T15:30:47.498665+00:00","identity_method":"Known catalogue references in the prepared dataset"},
   "running": false, "completed": 1, "failed": 0,
   "trace_id": "tr-example", "trace_url": "",
   "items": [{"id":"item-039","image_url":"/assets/item-039","name":"Toedscool","set_name":"Scarlet & Violet","year":"2023","status":"done","error":null,"kind":"pokemon_tcg","rarity":"rare_or_higher","needs_review":false,"probabilities":{},"research":null}]
