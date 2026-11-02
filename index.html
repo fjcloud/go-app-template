@@ -253,7 +253,7 @@ function showMore() { state.showing += 12; renderGrid(); }
 function htmlEscape(s) { if (!s) return ''; return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
 
 async function checkPrice(id) {
-  var it = state.items[id];
+  var it = state.items.find(function(card) { return card.id === id; });
   var cardName = it ? it.name || 'Unknown' : 'Unknown';
   var panel = document.getElementById('price-panel');
   if (state.researching) return;
