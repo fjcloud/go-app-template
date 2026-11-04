@@ -22,6 +22,11 @@ The complete English Base Set (1999), using 1st Edition scans → Analyze batch 
   are cached by the platform; refresh/reload must recover the current state.
 - A responsive card grid: image, catalogue name, set/year, D3 rarity badge and
   **Check price**. Show 12 cards initially and a **Show more** button.
+- Show the **entire card**, including all four borders, its name, edition stamp,
+  collector number and rarity symbol. Preserve its portrait aspect ratio with
+  `width:100%; height:auto; display:block` (or `object-fit:contain` in a portrait
+  frame). Never crop, zoom to fill, or use `object-fit:cover`. Keep the complete
+  card visible on desktop and mobile; do not reduce it to a short thumbnail strip.
 - Simple filters: **All**, **Rare**, **Needs review**, **Other**. Filter the full
   batch before pagination. Show the matching count and a useful empty state.
   Rare means `kind=pokemon_tcg` and `rarity=rare_or_higher`; Needs review means
