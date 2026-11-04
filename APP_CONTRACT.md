@@ -8,7 +8,9 @@ Keep the delivery scaffold and technical `APP_NAME=signal-desk`.
 
 The prepared collection contains all 102 English Base Set cards (1999): 69
 Pokémon, 26 Trainers and seven Energy cards, using 1st Edition scans. There are
-no modern cards or negative controls. The Other filter can legitimately be empty.
+three negative controls: Pikachu artwork without a card, Yu-Gi-Oh! Blue-Eyes
+White Dragon and Magic Black Lotus (Alpha). The batch contains 105 images.
+Controls belong under Other and must not offer a Pokémon price action.
 The edition stamp is not a rarity tier. Basic Energy is Common even without a
 printed rarity symbol. The platform reads the bottom-right symbol and maps it
 to rarity: circle Common, diamond Uncommon, star Rare. A missing mark on a clearly
@@ -107,7 +109,7 @@ with the race detector.
 
 ```json
 {
-  "dataset": {"name":"Base Set — English 1st Edition","items":102,"pokemon_cards":102,"controls":0,"years":"1999","snapshot_at":"2026-11-02T15:21:34.596909+00:00","identity_method":"Known catalogue references in the prepared dataset"},
+  "dataset": {"name":"Base Set — English 1st Edition + controls","items":105,"pokemon_cards":102,"controls":3,"years":"1999","snapshot_at":"2026-11-02T15:21:34.596909+00:00","identity_method":"Known catalogue references in the prepared dataset"},
   "running": false, "completed": 1, "failed": 0,
   "trace_id": "tr-example", "trace_url": "",
   "items": [{"id":"item-104","image_url":"/assets/item-104","name":"Charizard","set_name":"Base Set","year":"1999","status":"done","error":null,"kind":"pokemon_tcg","rarity":"rare_or_higher","rarity_symbol":"star","needs_review":false,"probabilities":{},"research":null}]
