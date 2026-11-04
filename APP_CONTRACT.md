@@ -10,7 +10,12 @@ The prepared collection contains all 102 English Base Set cards (1999): 69
 Pokémon, 26 Trainers and seven Energy cards, using 1st Edition scans. There are
 no modern cards or negative controls. The Other filter can legitimately be empty.
 The edition stamp is not a rarity tier. Basic Energy is Common even without a
-printed rarity symbol. Display dataset counts from the API, never hardcode them.
+printed rarity symbol. The platform reads the bottom-right symbol and maps it
+to rarity: circle Common, diamond Uncommon, star Rare. A missing mark on a clearly
+visible Base Set corner is Common; an unreadable corner remains Uncertain. This
+is a Base Set policy, not a rule for all promos. Use only the platform results;
+do not classify images in the Go app. Display dataset counts from the API, never
+hardcode them.
 Catalogue aggregate prices are not verified 1st Edition valuations: show the
 server's note alongside prices.
 
@@ -105,7 +110,7 @@ with the race detector.
   "dataset": {"name":"Base Set — English 1st Edition","items":102,"pokemon_cards":102,"controls":0,"years":"1999","snapshot_at":"2026-11-02T15:21:34.596909+00:00","identity_method":"Known catalogue references in the prepared dataset"},
   "running": false, "completed": 1, "failed": 0,
   "trace_id": "tr-example", "trace_url": "",
-  "items": [{"id":"item-104","image_url":"/assets/item-104","name":"Charizard","set_name":"Base Set","year":"1999","status":"done","error":null,"kind":"pokemon_tcg","rarity":"rare_or_higher","needs_review":false,"probabilities":{},"research":null}]
+  "items": [{"id":"item-104","image_url":"/assets/item-104","name":"Charizard","set_name":"Base Set","year":"1999","status":"done","error":null,"kind":"pokemon_tcg","rarity":"rare_or_higher","rarity_symbol":"star","needs_review":false,"probabilities":{},"research":null}]
 }
 ```
 
@@ -113,7 +118,10 @@ Items are already ranked. `status` is `pending`, `analyzing`, `done` or `error`.
 Before analysis, `kind` and `rarity` are null. `kind` can be `pokemon_tcg`,
 `other_card`, `not_a_card` or `uncertain`. Rarity can be `common`, `uncommon`,
 `rare_or_higher`, `not_applicable` or `uncertain`. Read dataset counts from the
-response. A later GET includes saved successful price research per item.
+response. Optional `rarity_symbol` preserves the model's raw shape choice:
+`circle`, `diamond`, `star`, `none` or `uncertain`. Rarity is the platform's
+Base Set mapping of that choice; the app must not infer it from the photo.
+A later GET includes saved successful price research per item.
 
 A successful research response contains:
 
