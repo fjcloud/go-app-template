@@ -40,20 +40,19 @@ The complete English Base Set (1999), using 1st Edition scans → Analyze batch 
   infer prices from the agent prose; keep that prose out of the price display.
 - Keep loading, partial results, failed items, retry and empty states visible.
   Do not turn model/network failures into fabricated classifications or prices.
-- Names can contain apostrophes, such as **Professor's Research**. Bind events
+- Names can contain apostrophes, such as **Farfetch'd**. Bind events
   without interpolating catalogue text into inline JavaScript handlers.
 - No login, microphone, uploads, portfolio, charts, trading, news feed or API-key
   form. Use plain HTML/CSS/JavaScript, no frontend framework or CDN dependency.
 
 ## Prepared dataset and platform
 
-The platform contains 54 Pokémon cards (53 English and one Japanese, 1998–2023),
-plus a Yu-Gi-Oh! card, a receipt and a standalone Pokémon illustration. Images
-are preloaded. Collector highlights include Charizard, Shining Charizard,
-Umbreon Gold Star, Shining Magikarp, Birthday Pikachu and Pikachu Illustrator.
-Collector value differs from printed rarity. Illustrator has a curated historical
-reference and no comparable market quote: show Unavailable, never an auction
-record or an invented price. Render counts from the API, not hardcoded constants.
+The platform contains all 102 English Base Set cards (1999), using 1st Edition
+scans: 69 Pokémon, 26 Trainers and seven Energy cards. Images are bundled and
+preloaded. There are 38 Common, 32 Uncommon and 32 Rare catalogue references.
+Render counts from the API, not hardcoded constants. The edition stamp describes
+the print run, not rarity. Provider aggregate prices are not verified 1st Edition
+quotes; display the returned note rather than implying an edition-specific value.
 D3 receives image bytes only; held-out catalogue labels are not
 sent to it. Catalogue IDs are known from this curated dataset: do not claim
 that the model recognized the exact edition of an arbitrary uploaded photo.
