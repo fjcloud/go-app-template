@@ -1,7 +1,7 @@
 # Card Scout — ARO workshop template
 
-Generate a small Go app with OpenCode and DeepSeek: analyze a mixed-era card
-collection, browse the rarity ranking, then ask an OpenShift AI agent for dated
+Generate a small Go app with OpenCode and DeepSeek: analyze the complete English Base Set (1999)
+using 1st Edition scans, browse the rarity ranking, then ask an OpenShift AI agent for dated
 market reference prices.
 
 The platform provides the dataset, D3-mini on one T4, the DeepSeek agent, its

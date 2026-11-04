@@ -6,7 +6,15 @@ Keep the delivery scaffold and technical `APP_NAME=signal-desk`.
 
 ## Experience
 
-A mixed box of cards → Analyze batch → Ranked cards → Check price.
+The prepared collection contains all 102 English Base Set cards (1999): 69
+Pokémon, 26 Trainers and seven Energy cards, using 1st Edition scans. There are
+no modern cards or negative controls. The Other filter can legitimately be empty.
+The edition stamp is not a rarity tier. Basic Energy is Common even without a
+printed rarity symbol. Display dataset counts from the API, never hardcode them.
+Catalogue aggregate prices are not verified 1st Edition valuations: show the
+server's note alongside prices.
+
+The complete English Base Set (1999), using 1st Edition scans → Analyze batch → Ranked cards → Check price.
 
 - Title: **Card Scout**. Show the dataset description and analysis progress.
 - One primary **Analyze batch** button. Start analysis, then poll the batch API
@@ -72,7 +80,7 @@ requests/timeouts: allow up to 210 seconds for a price research request (the
 native agent can take 180 seconds), and keep server/browser deadlines compatible.
 Only proxy these fixed routes to the configured platform;
 never accept an arbitrary caller URL or create a public general-purpose proxy.
-Item IDs contain exactly three digits (`item-039`). Serve HTML only at `/`;
+Item IDs contain exactly three digits (`item-104`). Serve HTML only at `/`;
 unknown paths return 404. Preserve redirects without following them. Initialize
 shared proxy state before serving requests, and test concurrent image requests
 with the race detector.
@@ -90,10 +98,10 @@ with the race detector.
 
 ```json
 {
-  "dataset": {"name":"Mixed-era collection","items":57,"pokemon_cards":54,"controls":3,"years":"1998–2023","snapshot_at":"2026-11-02T15:21:34.596909+00:00","identity_method":"Known catalogue references in the prepared dataset"},
+  "dataset": {"name":"Base Set — English 1st Edition","items":102,"pokemon_cards":102,"controls":0,"years":"1999","snapshot_at":"2026-11-02T15:21:34.596909+00:00","identity_method":"Known catalogue references in the prepared dataset"},
   "running": false, "completed": 1, "failed": 0,
   "trace_id": "tr-example", "trace_url": "",
-  "items": [{"id":"item-039","image_url":"/assets/item-039","name":"Toedscool","set_name":"Scarlet & Violet","year":"2023","status":"done","error":null,"kind":"pokemon_tcg","rarity":"rare_or_higher","needs_review":false,"probabilities":{},"research":null}]
+  "items": [{"id":"item-104","image_url":"/assets/item-104","name":"Charizard","set_name":"Base Set","year":"1999","status":"done","error":null,"kind":"pokemon_tcg","rarity":"rare_or_higher","needs_review":false,"probabilities":{},"research":null}]
 }
 ```
 
@@ -108,13 +116,13 @@ A successful research response contains:
 ```json
 {
   "status":"ok",
-  "card":{"name":"Toedscool","set":"Scarlet & Violet","set_id":"sv01","number":"201","rarity":"Illustration rare"},
+  "card":{"name":"Charizard","set":"Base Set","set_id":"base1","number":"4","rarity":"Rare"},
   "provider":"Cardmarket","currency":"EUR","trend":4.09,"average_7d":4.26,
   "provider_updated_at":"2026-10-29T22:54:33.169Z",
   "retrieved_at":"2026-10-30T15:40:00Z",
-  "source_url":"https://api.tcgdex.net/v2/en/cards/sv01-201",
+  "source_url":"https://api.tcgdex.net/v2/en/cards/base1-4",
   "trace_id":"tr-example","trace_url":"",
-  "note":"Market reference; language, finish and condition can change the value."
+  "note":"Catalogue aggregate, not a verified 1st Edition quote; language, print edition, finish and condition may differ."
 }
 ```
 
