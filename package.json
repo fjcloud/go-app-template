@@ -1,0 +1,12 @@
+{
+  "name": "card-scout-acceptance",
+  "private": true,
+  "scripts": {
+    "setup": "node tests/setup.cjs",
+    "test": "node --test tests/app.test.cjs",
+    "test:live": "node tests/live.cjs"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.56.1"
+  }
+}
