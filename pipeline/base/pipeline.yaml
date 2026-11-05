@@ -101,7 +101,7 @@ spec:
         - name: DOCKERFILE
           value: ./Dockerfile
         - name: CONTEXT
-          value: .
+          value: /source
       workspaces:
         - name: source
           workspace: source
