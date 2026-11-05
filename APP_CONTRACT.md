@@ -88,7 +88,9 @@ by the generated app. Use `LISTEN_ADDR` (default `:8080`).
 
 ## API to proxy
 
-Preserve upstream HTTP status, JSON errors and image content types. Use bounded
+Preserve upstream HTTP status, JSON errors, image content types and complete
+response bodies. Some bundled card images exceed 2 MiB. Never silently truncate
+successful images or JSON to an error-body size limit. Use bounded
 requests/timeouts: allow up to 210 seconds for a price research request (the
 native agent can take 180 seconds), and keep server/browser deadlines compatible.
 Only proxy these fixed routes to the configured platform;
@@ -162,7 +164,9 @@ Use `go:embed` for the UI. Prefer the Go standard library and a small source
 surface. Run `go test -race ./...`, `go vet ./...`, and a local build. Meaningful
 httptest cases must cover proxy status/errors, images and rejection of arbitrary
 routes. Exercise the actual production router in tests; do not rebuild routing
-or return canned health responses inside the tests. Check the UI at mobile width and keyboard access when a browser is
+or return canned health responses inside the tests. Include a >2 MiB image,
+>256 KiB JSON and a redirect whose destination must never be contacted; verify
+complete bodies and the unchanged redirect status/Location. Check the UI at mobile width and keyboard access when a browser is
 available. Chromium must use `--use-mock-keychain`.
 
 Follow AGENTS.md for Git → Tekton → Argo CD. Verify the exact pushed revision and
