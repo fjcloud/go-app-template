@@ -2,7 +2,7 @@
 
 Build a small English Go web application **from scratch**. The platform is already
 prepared. Your job is the UI and a small backend proxy, not model orchestration.
-Keep the delivery scaffold and technical `APP_NAME=signal-desk`.
+Keep the delivery scaffold and technical `APP_NAME=card-scout`.
 
 ## Experience
 
@@ -23,7 +23,9 @@ server's note alongside prices.
 
 The complete English Base Set (1999), using 1st Edition scans → Analyze batch → Ranked cards → Check price.
 
-- Title: **Card Scout**. Show the dataset description and analysis progress.
+- Title: **Card Scout**. Subtitle: **Scan Pokémon cards. Discover rarity. Check prices.**
+  Use this branding in the browser title and page heading. Show the dataset
+  description and analysis progress.
 - One primary **Analyze batch** button. Start analysis, then poll the batch API
   about once a second while running. Disable duplicate starts. Completed results
   are cached by the platform; refresh/reload must recover the current state.
@@ -74,10 +76,10 @@ native OpenShift AI Responses agent and hosts its read-only price MCP tool.
 It owns all model credentials and MLflow tracing. **Do not implement any of
 those functions or copy their source into this application.**
 
-The only backend setting is `CARD_SCOUT_URL`, supplied by `signal-desk-config`:
+The only backend setting is `CARD_SCOUT_URL`, supplied by `card-scout-config`:
 
 ```
-http://card-scout-platform.signal-desk-dev.svc.cluster.local:8080
+http://card-scout-platform.card-scout-dev.svc.cluster.local:8080
 ```
 
 Keep this URL and all platform calls server-side. The browser talks only to the

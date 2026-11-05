@@ -137,8 +137,8 @@ model key or Kubernetes API access; it only proxies the fixed Card Scout API.
 
 ## Card Scout
 
-Keep technical APP_NAME `signal-desk`. All UI and errors must be in English.
-The platform injects `CARD_SCOUT_URL` through `signal-desk-config`. Use it on the
+Keep technical APP_NAME `card-scout`. All UI and errors must be in English.
+The platform injects `CARD_SCOUT_URL` through `card-scout-config`. Use it on the
 backend only. Do not implement inference, price scraping, MCP or tracing again.
 Run CGO_ENABLED=1 go test -race ./... and go vet ./... before shipping.
 Use CGO_ENABLED=0 only for the production build, not race tests. Chromium, if available,

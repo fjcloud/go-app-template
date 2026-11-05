@@ -1,15 +1,15 @@
 apiVersion: route.openshift.io/v1
 kind: Route
 metadata:
-  name: signal-desk
+  name: card-scout
   annotations:
     haproxy.router.openshift.io/timeout: 120s
   labels:
-    app.kubernetes.io/name: signal-desk
+    app.kubernetes.io/name: card-scout
 spec:
   to:
     kind: Service
-    name: signal-desk
+    name: card-scout
   port:
     targetPort: http
   tls:

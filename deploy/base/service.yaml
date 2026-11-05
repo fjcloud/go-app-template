@@ -1,12 +1,12 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: signal-desk
+  name: card-scout
   labels:
-    app.kubernetes.io/name: signal-desk
+    app.kubernetes.io/name: card-scout
 spec:
   selector:
-    app.kubernetes.io/name: signal-desk
+    app.kubernetes.io/name: card-scout
   ports:
   - name: http
     port: 8080

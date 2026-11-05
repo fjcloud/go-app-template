@@ -36,7 +36,7 @@ class SecurityContract(unittest.TestCase):
 class CardScoutContract(unittest.TestCase):
     def test_public_https_route_reaches_the_app_directly(self):
         spec = yaml.safe_load((ROOT/'deploy/base/deployment.yaml').read_text())['spec']['template']['spec']
-        self.assertEqual(spec['serviceAccountName'], 'signal-desk')
+        self.assertEqual(spec['serviceAccountName'], 'card-scout')
         self.assertEqual(len(spec['containers']), 1)
         app = spec['containers'][0]
         self.assertIn({'name':'LISTEN_ADDR','value':':8080'}, app['env'])
@@ -52,7 +52,7 @@ class CardScoutContract(unittest.TestCase):
         spec = yaml.safe_load((ROOT/'deploy/base/deployment.yaml').read_text())['spec']['template']['spec']
         self.assertNotIn('runtime-model', {v['name'] for v in spec.get('volumes', [])})
         app = spec['containers'][0]
-        self.assertEqual(app['envFrom'], [{'configMapRef': {'name': 'signal-desk-config'}}])
+        self.assertEqual(app['envFrom'], [{'configMapRef': {'name': 'card-scout-config'}}])
         self.assertNotIn('OPENAI_API_KEY', {e['name'] for e in app['env']})
         self.assertTrue(all(p['httpGet']['scheme']=='HTTP' and p['httpGet']['port']=='http' for n,p in app.items() if n.endswith('Probe')))
 

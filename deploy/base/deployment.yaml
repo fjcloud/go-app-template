@@ -1,34 +1,34 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: signal-desk
+  name: card-scout
   labels:
-    app.kubernetes.io/name: signal-desk
+    app.kubernetes.io/name: card-scout
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app.kubernetes.io/name: signal-desk
+      app.kubernetes.io/name: card-scout
   template:
     metadata:
       annotations:
         openshift.io/required-scc: restricted-v2
       labels:
-        app.kubernetes.io/name: signal-desk
+        app.kubernetes.io/name: card-scout
     spec:
-      serviceAccountName: signal-desk
+      serviceAccountName: card-scout
       automountServiceAccountToken: false
       securityContext:
         runAsNonRoot: true
         seccompProfile:
           type: RuntimeDefault
       containers:
-      - name: signal-desk
-        image: image-registry.openshift-image-registry.svc:5000/signal-desk-build/signal-desk:latest
+      - name: card-scout
+        image: image-registry.openshift-image-registry.svc:5000/card-scout-build/card-scout:latest
         imagePullPolicy: Always
         envFrom:
         - configMapRef:
-            name: signal-desk-config
+            name: card-scout-config
         env:
         - name: LISTEN_ADDR
           value: :8080
