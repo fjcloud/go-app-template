@@ -54,7 +54,7 @@ before(async () => {
   }
   tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'card-scout-'));
   const binary = path.join(tmp, 'app');
-  const built = spawnSync('go', ['build', '-buildvcs=false', '-o', binary, '.'], {encoding: 'utf8'});
+  const built = spawnSync('go', ['build', '-race', '-buildvcs=false', '-o', binary, '.'], {encoding: 'utf8', env: {...process.env, CGO_ENABLED: '1'}});
   assert.equal(built.status, 0, built.stdout + built.stderr);
   reset(); fixture = http.createServer(upstream);
   const fixturePort = await listen(fixture), reservation = http.createServer();
@@ -68,7 +68,7 @@ before(async () => {
 });
 after(async () => {
   if (browser) await browser.close();
-  if (app) { const exited = new Promise(r => app.once('exit', r)); app.kill(); await exited; }
+  if (app && app.exitCode === null && app.signalCode === null) { const exited = new Promise(r => app.once('exit', r)); app.kill(); await exited; }
   if (fixture) await new Promise(r => fixture.close(r));
   if (tmp) fs.rmSync(tmp, {recursive: true, force: true});
 });
