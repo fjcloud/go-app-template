@@ -14,6 +14,8 @@ components:
       cpuLimit: 2000m
       mountSources: true
       env:
+        - name: PLAYWRIGHT_WS_ENDPOINT
+          value: ws://127.0.0.1:9323/card-scout-tests
         - name: SHELL
           value: /bin/bash
         - name: APP_NAME
@@ -23,6 +25,23 @@ components:
         # Keep /injected-tools/bin first so the Dev Spaces AI injector stays on PATH.
         - name: PATH
           value: /injected-tools/bin:/home/user/.local/bin:/usr/local/go/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+  # Local-only test browser; shares the workspace network, with no public endpoint.
+  - name: test-browser
+    container:
+      image: mcr.microsoft.com/playwright:v1.56.1-noble
+      memoryRequest: 256Mi
+      memoryLimit: 1Gi
+      cpuRequest: 100m
+      cpuLimit: 1000m
+      mountSources: false
+      env:
+        - name: NPM_CONFIG_CACHE
+          value: /tmp/test-browser-cache
+      command: [/bin/sh, -c]
+      args:
+        - >-
+          npm install --prefix /tmp/test-browser --ignore-scripts --no-fund --no-audit playwright@1.56.1 &&
+          exec node -e 'require("/tmp/test-browser/node_modules/playwright").chromium.launchServer({headless:true,args:["--use-mock-keychain"],host:"127.0.0.1",port:9323,wsPath:"/card-scout-tests"}).then(s=>console.log(s.wsEndpoint()))'
 commands:
   - id: bootstrap
     exec:

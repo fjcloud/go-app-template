@@ -1,23 +1,20 @@
-# Card Scout — ARO workshop template
+# Card Scout — ARO template
 
-**Scan Pokémon cards. Discover rarity. Check prices.**
-
-Generate a small Go app with OpenCode and DeepSeek: analyze the complete English Base Set (1999)
-using 1st Edition scans, browse the rarity ranking, then ask an OpenShift AI agent for dated
-market reference prices.
-
-The platform provides the dataset, D3-mini on one T4, the DeepSeek agent, its
-read-only MCP tool and MLflow traces. The app only needs a UI and a same-origin
-proxy to `CARD_SCOUT_URL`.
+Generate one English Go page from scratch: show the cards, analyze them, check a
+price with its source and MLflow trace. The platform owns the models and data.
 
 1. Complete the [ARO platform workshop](https://fjcloud.github.io/aro-ai-app-platform/).
-2. Launch this template in Dev Spaces using the `aro-card-scout` branch.
-3. Read [APP_CONTRACT.md](APP_CONTRACT.md), then ask OpenCode to build the app
-   from scratch and ship it using [AGENTS.md](AGENTS.md).
+2. Open this branch in Dev Spaces and ask OpenCode to follow [AGENTS.md](AGENTS.md).
+3. It runs the provided `npm test`, fixes app failures, then ships using
+   [DELIVERY.md](DELIVERY.md) and runs `APP_URL=https://your-route npm run test:live`.
 
-The prepared delivery scaffold uses `card-scout-build` and `card-scout-dev`.
-Keep its internal registry image, restricted SCC and HTTPS Route. The generated
-application has no model key, Kubernetes token or persistent volume.
+The short [contract](APP_CONTRACT.md) defines the app. Tests contain only fixture
+API data and acceptance checks; no completed app is bundled. Keep tests unchanged.
+`npm test` builds and runs the actual Go app against a local fixture API and a
+browser; `test:live` verifies the deployed app against the real platform.
 
-The main branch of this repository belongs to the ROSA workshop. This ARO branch
-contains the Card Scout contract and delivery scaffold; no completed app is bundled.
+Dev Spaces includes a local-only test-browser component. For local development,
+run `npm ci && npm run setup` to install Chromium instead. The app image remains
+Go only. No application credentials, filters, pagination or extra services to build.
+
+The main branch belongs to ROSA. This ARO template uses `aro-card-scout`.

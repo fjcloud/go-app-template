@@ -27,13 +27,23 @@ class SecurityContract(unittest.TestCase):
         self.assertIn('cd "$(workspaces.source.path)"', step['script'])
 
     def test_runbook_uses_user_namespace_without_scc_grants(self):
-        agents = (ROOT/'AGENTS.md').read_text()
+        agents = (ROOT/'AGENTS.md').read_text() + (ROOT/'DELIVERY.md').read_text()
         self.assertIn('hostUsers: false', agents)
         self.assertNotIn('add-scc-to-user', agents)
         self.assertNotIn('privileged: true', agents)
         self.assertNotIn('oc create namespace', agents)
 
 class CardScoutContract(unittest.TestCase):
+    def test_browser_driver_matches_the_workspace_browser(self):
+        import json
+        version = json.loads((ROOT/'package.json').read_text())['devDependencies']['@playwright/test']
+        devfile = yaml.safe_load((ROOT/'devfile.yaml').read_text())
+        browser = next(c['container'] for c in devfile['components'] if c['name']=='test-browser')
+        self.assertEqual(browser['image'], 'mcr.microsoft.com/playwright:v'+version+'-noble')
+        self.assertIn('playwright@'+version, browser['args'][0])
+        self.assertIn('host:"127.0.0.1"', browser['args'][0])
+        self.assertNotIn('endpoints', browser)
+
     def test_public_https_route_reaches_the_app_directly(self):
         spec = yaml.safe_load((ROOT/'deploy/base/deployment.yaml').read_text())['spec']['template']['spec']
         self.assertEqual(spec['serviceAccountName'], 'card-scout')
