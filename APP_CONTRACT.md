@@ -96,7 +96,11 @@ never accept an arbitrary caller URL or create a public general-purpose proxy.
 Item IDs contain exactly three digits (`item-104`). Serve HTML only at `/`;
 unknown paths return 404. Preserve redirects without following them. Initialize
 shared proxy state before serving requests, and test concurrent image requests
-with the race detector.
+with the race detector. Create the production router in a function that accepts
+the upstream URL; `main` reads the environment and starts the server. Tests must
+call that same function. Do not duplicate routes in a test-only helper or read
+required environment variables in package `init`. With Go ServeMux, use an
+exact-root pattern or an explicit path check so `/unknown` cannot return HTML.
 
 | Application route | Prepared platform route |
 | --- | --- |
