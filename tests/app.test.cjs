@@ -24,7 +24,8 @@ function reset(options = {}) {
 }
 function reply(res, code, data) { res.writeHead(code, {'Content-Type': 'application/json'}); res.end(JSON.stringify(data)); }
 function upstream(req, res) {
-  if (req.url === '/api/batch') {
+  const pathname = new URL(req.url, "http://fixture").pathname;
+  if (pathname === '/api/batch') {
     state.reads++;
     if (state.batchFailures-- > 0) return reply(res, 503, {error: 'Fixture unavailable'});
     const running = state.analyzed && state.polls++ === 0;
@@ -32,13 +33,13 @@ function upstream(req, res) {
       completed: state.analyzed ? (running ? 1 : 3) : 0, failed: 0,
       items: cards.map(c => state.analyzed ? c : {...c, status: 'pending', kind: null, rarity: null})});
   }
-  if (req.method === 'POST' && req.url === '/api/batch/analyze') {
+  if (req.method === 'POST' && pathname === '/api/batch/analyze') {
     state.starts++; state.analyzed = true; return reply(res, 202, {running: true});
   }
-  if (req.url === '/assets/item-104' || req.url === '/assets/item-197' || req.url === '/assets/item-203') {
+  if (pathname === '/assets/item-104' || pathname === '/assets/item-197' || pathname === '/assets/item-203') {
     res.writeHead(200, {'Content-Type': 'image/svg+xml'}); return res.end(image);
   }
-  if (req.method === 'POST' && req.url === '/api/cards/item-104/research') {
+  if (req.method === 'POST' && pathname === '/api/cards/item-104/research') {
     if (state.priceFailures-- > 0) return reply(res, 502, {error: 'Fixture price unavailable'});
     return reply(res, 200, state.quote);
   }
@@ -63,7 +64,7 @@ before(async () => {
   app = spawn(binary, [], {env: {PATH: process.env.PATH, HOME: process.env.HOME,
     CARD_SCOUT_URL: 'http://127.0.0.1:' + fixturePort, LISTEN_ADDR: '127.0.0.1:' + appPort}, stdio: ['ignore', 'pipe', 'pipe']});
   app.stdout.on('data', b => logs += b); app.stderr.on('data', b => logs += b);
-  await expect.poll(async () => { try { return (await fetch(base + '/healthz')).status; } catch { return 0; } }, {timeout: 10000, message: 'The actual Go app must start: ' + logs}).toBe(200);
+  await expect.poll(async () => { try { return (await fetch(base + '/healthz')).status; } catch { return 0; } }, {timeout: 10000, message: 'The actual Go app must start'}).toBe(200).catch(e => { throw new Error(e.message + '\n' + logs); });
   browser = await connectBrowser();
 });
 after(async () => {

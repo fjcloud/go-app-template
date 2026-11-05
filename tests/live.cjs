@@ -22,9 +22,15 @@ assert.ok(base, 'Set APP_URL to the deployed HTTPS Route');
     const batch = await get(base + '/api/batch');
     const eligible = batch.items.filter(i => i.status === 'done' && i.kind === 'pokemon_tcg');
     const target = eligible.find(i => !i.research) || eligible[0]; assert.ok(target);
-    const reply = page.waitForResponse(r => r.url() === base + '/api/cards/' + target.id + '/research' && r.request().method() === 'POST', {timeout: 240000});
-    await page.locator('[data-testid=card][data-item-id=' + target.id + ']').getByRole('button', {name: 'Check price', exact: true}).click();
-    const response = await reply; assert.equal(response.status(), 200); const data = await response.json();
+    const card = page.locator('[data-testid=card][data-item-id=' + target.id + ']');
+    let data = target.research;
+    if (data) {
+      await card.getByRole('button', {name: 'Check price', exact: true}).click();
+    } else {
+      const reply = page.waitForResponse(r => r.url() === base + '/api/cards/' + target.id + '/research' && r.request().method() === 'POST', {timeout: 240000});
+      await card.getByRole('button', {name: 'Check price', exact: true}).click();
+      const response = await reply; assert.equal(response.status(), 200); data = await response.json();
+    }
     await expect(page.getByTestId('price')).toContainText(data.card.name);
     const trend = (await page.getByTestId('trend').innerText()).trim();
     if (data.trend === null) assert.equal(trend, 'Unavailable'); else assert.equal(Number(trend), data.trend);
