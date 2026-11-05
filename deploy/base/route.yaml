@@ -3,7 +3,7 @@ kind: Route
 metadata:
   name: card-scout
   annotations:
-    haproxy.router.openshift.io/timeout: 120s
+    haproxy.router.openshift.io/timeout: 240s
   labels:
     app.kubernetes.io/name: card-scout
 spec:
