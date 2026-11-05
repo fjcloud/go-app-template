@@ -46,7 +46,7 @@ class CardScoutContract(unittest.TestCase):
         route = yaml.safe_load((ROOT/'deploy/base/route.yaml').read_text())
         self.assertEqual(route['spec']['port']['targetPort'], 'http')
         self.assertEqual(route['spec']['tls'], {'termination':'edge','insecureEdgeTerminationPolicy':'Redirect'})
-        self.assertEqual(route['metadata']['annotations']['haproxy.router.openshift.io/timeout'], '120s')
+        self.assertGreaterEqual(int(route['metadata']['annotations']['haproxy.router.openshift.io/timeout'].removesuffix('s')), 210)
 
     def test_local_model_needs_no_runtime_api_key(self):
         spec = yaml.safe_load((ROOT/'deploy/base/deployment.yaml').read_text())['spec']['template']['spec']
