@@ -16,6 +16,7 @@ Write only a small Go proxy and an embedded web page. Keep APP_NAME=card-scout.
    Show the selected card name, Cardmarket trend in EUR, provider update date,
    the returned note, **Source** and **View MLflow trace** links when supplied.
    Read numeric evidence from the API: zero is 0; null is Unavailable.
+   Display the price result at the top of the page, above the card grid, and scroll it into view when **Check price** is clicked.
 
 Show a visible error (`role=alert`) and a working **Retry** button on failure.
 Keep loaded cards and the selected card name. Retries must survive repeated
